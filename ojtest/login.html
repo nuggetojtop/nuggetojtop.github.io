@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Nugget OJ</title>
+    <link rel="stylesheet" href="/ojtest/css/common.css">
+    <link rel="stylesheet" href="/ojtest/css/login.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
+            <div class="nav">
+                <!-- 由 common.js 动态渲染 -->
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="login-card">
+            <h2>用户登录</h2>
+            <div id="alert-area"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" class="form-control" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" class="form-control" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%; padding: 12px;">登录</button>
+                <div style="text-align: center; margin-top: 20px;">
+                    <span>还没有账号？</span>
+                    <a href="/ojtest/register.html" style="color: #3498db;">立即注册</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/ojtest/js/common.js"></script>
+    <script src="/ojtest/js/login.js"></script>
+</body>
+</html>
