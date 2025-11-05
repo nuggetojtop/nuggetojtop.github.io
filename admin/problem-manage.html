@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题目管理 - Nugget OJ</title>
+    <link rel="stylesheet" href="/ojtest/css/common.css">
+    <link rel="stylesheet" href="/ojtest/css/admin.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
+            <div class="nav">
+                <!-- 由 common.js 动态渲染 -->
+            </div>
+            <div class="admin-nav">
+                <!-- 管理员入口，由 common.js 动态渲染 -->
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="not-admin-alert" class="alert alert-danger" style="display: none;">
+            无管理员权限，禁止访问！
+        </div>
+        <div id="admin-problem-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1>题目管理</h1>
+                <button id="add-problem-btn" class="btn btn-success">创建新题目</button>
+            </div>
+
+            <!-- 创建/编辑题目表单 -->
+            <div class="card" id="problem-form-card" style="display: none;">
+                <h3 id="form-title">创建新题目</h3>
+                <div id="form-alert-area"></div>
+                <form id="problem-form">
+                    <input type="hidden" id="problem-id"> <!-- 编辑时存储题目ID -->
+                    <div class="form-group">
+                        <label for="problem-title">题目标题</label>
+                        <input type="text" id="problem-title" class="form-control" placeholder="请输入题目标题" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-difficulty">难度</label>
+                        <select id="problem-difficulty" class="form-control" required>
+                            <option value="简单">简单</option>
+                            <option value="中等">中等</option>
+                            <option value="困难">困难</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-description">题目描述</label>
+                        <textarea id="problem-description" class="form-control" rows="6" placeholder="请输入题目描述" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-input">输入格式</label>
+                        <textarea id="problem-input" class="form-control" rows="3" placeholder="请输入输入格式说明" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-output">输出格式</label>
+                        <textarea id="problem-output" class="form-control" rows="3" placeholder="请输入输出格式说明" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-sample-input">样例输入</label>
+                        <textarea id="problem-sample-input" class="form-control" rows="3" placeholder="请输入样例输入" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-sample-output">样例输出</label>
+                        <textarea id="problem-sample-output" class="form-control" rows="3" placeholder="请输入样例输出" required></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" id="cancel-form-btn" class="btn btn-danger">取消</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 题目列表 -->
+            <div class="card">
+                <table id="admin-problem-table">
+                    <thead>
+                        <tr>
+                            <th>题目ID</th>
+                            <th>标题</th>
+                            <th>难度</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 由 JS 动态渲染题目列表 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/ojtest/js/common.js"></script>
+    <script src="/ojtest/js/admin-problem.js"></script>
+</body>
+</html>
