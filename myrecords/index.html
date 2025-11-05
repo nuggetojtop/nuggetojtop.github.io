@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的提交记录 - Nugget OJ</title>
+    <link rel="stylesheet" href="/ojtest/css/common.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
+            <div class="nav">
+                <!-- 由 common.js 动态渲染 -->
+            </div>
+            <div class="admin-nav">
+                <!-- 管理员入口，由 common.js 动态渲染 -->
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>我的提交记录</h1>
+        <div id="not-login-alert" class="alert alert-danger" style="display: none;">
+            请先登录后查看提交记录！
+        </div>
+        <div id="records-container" style="display: none;">
+            <div class="card">
+                <table id="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>提交ID</th>
+                            <th>题目</th>
+                            <th>语言</th>
+                            <th>状态</th>
+                            <th>得分</th>
+                            <th>提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 由 JS 动态渲染提交记录 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/ojtest/js/common.js"></script>
+    <script src="/ojtest/js/myrecords.js"></script>
+</body>
+</html>
