@@ -52,23 +52,43 @@
             text-shadow: 0 0 10px rgba(255,255,255,0.3);
             font-size: 2rem;
         }
-        .nav-btn {
+        /* 新版按钮样式 */
+        .btn {
             padding: 0.8rem 1.5rem;
             font-size: 1rem;
             font-weight: 600;
-            color: #1a2a6c;
-            background: #fff;
+            color: #fff;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
             border: none;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
         }
-        .nav-btn:hover {
+        .btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            color: #b21f1f;
+            background: linear-gradient(135deg, #ff5252, #45b7aa);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .btn:active::after {
+            width: 200px;
+            height: 200px;
         }
         .filter-bar {
             display: flex;
@@ -146,24 +166,6 @@
             background: rgba(255, 68, 68, 0.2);
             color: #ff4444;
         }
-        .solve-btn {
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1a2a6c;
-            background: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-        }
-        .solve-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            color: #b21f1f;
-        }
         .stats {
             display: flex;
             gap: 2rem;
@@ -192,7 +194,7 @@
             .filter-bar { flex-direction: column; align-items: stretch; }
             .search-box, .filter-select { width: 100%; }
             th, td { padding: 0.8rem; font-size: 0.9rem; }
-            .solve-btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
+            .btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
             .container { padding: 1.5rem; }
         }
     </style>
@@ -201,7 +203,7 @@
     <div class="container">
         <div class="header">
             <h1>题目列表</h1>
-            <a href="../index.html" class="nav-btn">返回首页</a>
+            <a href="../index.html" class="btn">返回首页</a>
         </div>
         <div class="stats">
             <div class="stat-item">
@@ -209,11 +211,11 @@
                 <div class="stat-label">总题目数</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">1</div>
+                <div class="stat-value">0</div>
                 <div class="stat-label">已通过</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">50%</div>
+                <div class="stat-value">0%</div>
                 <div class="stat-label">通过率</div>
             </div>
         </div>
