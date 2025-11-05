@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员控制台 - Nugget OJ</title>
+    <link rel="stylesheet" href="/ojtest/css/common.css">
+    <link rel="stylesheet" href="/ojtest/css/admin.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
+            <div class="nav">
+                <!-- 由 common.js 动态渲染 -->
+            </div>
+            <div class="admin-nav">
+                <!-- 管理员入口，由 common.js 动态渲染 -->
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="not-admin-alert" class="alert alert-danger" style="display: none;">
+            无管理员权限，禁止访问！
+        </div>
+        <div id="admin-container" style="display: none;">
+            <h1>管理员控制台</h1>
+            <div class="admin-card-container">
+                <div class="admin-card">
+                    <h3>题目管理</h3>
+                    <p>创建、编辑、删除题目</p>
+                    <a href="/ojtest/admin/problem-manage.html" class="btn">进入管理</a>
+                </div>
+                <div class="admin-card">
+                    <h3>用户管理</h3>
+                    <p>查看、管理平台用户（待实现）</p>
+                    <a href="/ojtest/admin/user-manage.html" class="btn" style="background: #95a5a6; cursor: not-allowed;">进入管理</a>
+                </div>
+                <div class="admin-card">
+                    <h3>系统统计</h3>
+                    <p>查看平台提交、用户数据（待实现）</p>
+                    <a href="#" class="btn" style="background: #95a5a6; cursor: not-allowed;">查看统计</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/ojtest/js/common.js"></script>
+    <script>
+        // 页面加载时验证管理员权限
+        window.addEventListener('load', () => {
+            const notAdminAlert = document.getElementById('not-admin-alert');
+            const adminContainer = document.getElementById('admin-container');
+
+            if (!UserUtil.isLogin() || !UserUtil.isAdmin()) {
+                notAdminAlert.style.display = 'block';
+                adminContainer.style.display = 'none';
+                // 非管理员3秒后跳转首页
+                setTimeout(() => {
+                    window.location.href = '/ojtest/index.html';
+                }, 3000);
+                return;
+            }
+
+            notAdminAlert.style.display = 'none';
+            adminContainer.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
