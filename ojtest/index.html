@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nugget OJ - 编程评测平台</title>
+    <title>首页 - Nugget OJ</title>
     <style>
         * {
             margin: 0;
@@ -11,68 +11,82 @@
             box-sizing: border-box;
             font-family: 'Microsoft YaHei', 'Inter', sans-serif;
         }
-
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
             background-size: 400% 400%;
             animation: gradientBg 15s ease infinite;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            color: #fff;
+            padding: 2rem;
+            overflow-x: hidden;
         }
-
-        /* 背景渐变动画 */
         @keyframes gradientBg {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-
-        /* 标题动画 */
-        .title {
-            font-size: 4rem;
-            font-weight: 800;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255,255,255,0.5);
-            margin-bottom: 3rem;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             opacity: 0;
-            transform: translateY(-30px);
-            animation: fadeInUp 1.5s ease forwards;
+            transform: translateY(20px);
+            animation: fadeInUp 1s ease forwards;
         }
-
-        /* 新版按钮样式（统一非管理界面） */
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            position: relative;
+            font-size: 2.5rem;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: #fff;
+            border-radius: 3px;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        /* 新版按钮样式 */
         .btn {
-            padding: 1.2rem 3rem;
-            font-size: 1.5rem;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: #fff;
             background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1.5s ease 0.5s forwards;
+            text-decoration: none;
             position: relative;
             overflow: hidden;
-            text-decoration: none;
             display: inline-block;
-            text-align: center;
         }
-
-        /* 按钮hover效果 */
         .btn:hover {
             transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             background: linear-gradient(135deg, #ff5252, #45b7aa);
         }
-
-        /* 按钮点击波纹动画 */
         .btn::after {
             content: '';
             position: absolute;
@@ -85,48 +99,50 @@
             transform: translate(-50%, -50%);
             transition: width 0.6s ease, height 0.6s ease;
         }
-
         .btn:active::after {
-            width: 300px;
-            height: 300px;
+            width: 200px;
+            height: 200px;
         }
-
-        /* 渐入动画 */
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .intro {
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.5s forwards;
         }
-
-        /* 底部文字 */
         .footer {
-            position: absolute;
-            bottom: 2rem;
+            text-align: center;
+            margin-top: 4rem;
             color: rgba(255,255,255,0.7);
             font-size: 1rem;
-            opacity: 0;
-            animation: fadeInUp 1.5s ease 1s forwards;
         }
-
-        /* 响应式适配手机 */
         @media (max-width: 768px) {
-            .title {
-                font-size: 2.5rem;
-                text-align: center;
-                padding: 0 1rem;
-            }
-
-            .btn {
-                padding: 1rem 2.5rem;
-                font-size: 1.2rem;
-            }
+            h1 { font-size: 2rem; }
+            .nav { gap: 1rem; }
+            .btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
+            .container { padding: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <h1 class="title">Nugget OJ</h1>
-    <a href="/ojtest/" class="btn">进入编程评测平台</a>
-    <div class="footer">© 2025 Nugget OJ - 青岛中学</div>
+    <div class="container">
+        <h1>Nugget OJ 编程评测平台</h1>
+        <div class="nav">
+            <a href="login.html" class="btn">登录</a>
+            <a href="register.html" class="btn">注册</a>
+            <a href="problem/index.html" class="btn">题目列表</a>
+            <a href="myrecords/index.html" class="btn">我的记录</a>
+            <a href="admin/index.html" class="btn">管理员入口</a>
+        </div>
+        <div class="intro">
+            <p>欢迎使用 Nugget OJ 编程评测平台！这里提供丰富的编程题目，支持多种编程语言提交。</p>
+            <p>无论是入门新手还是进阶开发者，都能在这里提升编程能力、检验学习成果。</p>
+            <p>立即登录/注册，开始你的编程刷题之旅吧！</p>
+        </div>
+        <div class="footer">© 2025 Nugget OJ - 青岛中学</div>
+    </div>
+    <script src="js/common.js"></script>
 </body>
 </html>
