@@ -3,79 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Nugget OJ - 编程在线评测平台 </title>
-    <link rel="stylesheet" href="/ojtest/css/common.css">
+    <title>首页 - Nugget OJ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Inter', sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+            color: #fff;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+        @keyframes gradientBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 1s ease forwards;
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            position: relative;
+            font-size: 2.5rem;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: #fff;
+            border-radius: 3px;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+        .nav-btn {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a2a6c;
+            background: #fff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+        }
+        .nav-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            color: #b21f1f;
+        }
+        .nav-btn::after {
+            content: '';
+            position: relative;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .nav-btn:active::after {
+            width: 200px;
+            height: 200px;
+        }
+        .intro {
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.5s forwards;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .nav { gap: 1rem; }
+            .nav-btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
+            .container { padding: 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="container header-content">
-            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
-            <div class="nav">
-                <!-- 由 common.js 动态渲染 -->
-            </div>
-            <div class="admin-nav">
-                <!-- 管理员入口，由 common.js 动态渲染 -->
-            </div>
-        </div>
-    </header>
-
     <div class="container">
-        <div class="card" style="margin-top: 50px; text-align: center;">
-            <h1>欢迎使用 Nugget OJ 在线评测平台</h1>
-            <p style="font-size: 18px; margin: 20px 0; color: #666;">
-                在这里，你可以刷题、提交代码、查看判题结果，提升编程能力！
-            </p>
-            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
-                <a href="/ojtest/problem/index.html" class="btn btn-success">开始刷题</a>
-                <a href="/ojtest/register.html" class="btn">立即注册</a>
-            </div>
+        <h1>Nugget OJ 编程评测平台</h1>
+        <div class="nav">
+            <a href="login.html" class="nav-btn">登录</a>
+            <a href="register.html" class="nav-btn">注册</a>
+            <a href="problem/index.html" class="nav-btn">题目列表</a>
+            <a href="myrecords/index.html" class="nav-btn">我的记录</a>
+            <a href="admin/index.html" class="nav-btn">管理员入口</a>
         </div>
-
-        <div style="margin-top: 50px;">
-            <h2>平台公告</h2>
-            <div class="card">
-                <p>1. 本平台基于洛谷 API 提供判题服务，需确保代码符合洛谷题目要求。</p>
-                <p>2. 管理员可创建/编辑/删除题目，普通用户可刷题和查看提交记录。</p>
-                <p>3. 如有问题，请联系管理员（admin）。</p>
-            </div>
-
-            <h2 style="margin-top: 30px;">最新题目</h2>
-            <div class="card" id="latest-problems">
-                <!-- 由 JS 动态渲染最新题目 -->
-            </div>
+        <div class="intro">
+            <p>欢迎使用 Nugget OJ 编程评测平台！这里提供丰富的编程题目，支持多种编程语言提交。</p>
+            <p>无论是入门新手还是进阶开发者，都能在这里提升编程能力、检验学习成果。</p>
+            <p>立即登录/注册，开始你的编程刷题之旅吧！</p>
+            <p>Designed in Qingdao Acadmy.</p>
         </div>
+        <div class="footer">© 2025 Nugget OJ - 青岛中学</div>
     </div>
-
-    <script src="/ojtest/js/common.js"></script>
-    <script>
-        // 渲染最新题目（最多显示5题）
-        function renderLatestProblems() {
-            const problems = ProblemUtil.getAllProblems();
-            const latestProblems = problems.slice(-5).reverse(); // 取最新5题
-            const container = document.getElementById('latest-problems');
-
-            if (latestProblems.length === 0) {
-                container.innerHTML = '<p>暂无题目，管理员可创建题目</p>';
-                return;
-            }
-
-            let html = '<table><thead><tr><th>题目ID</th><th>标题</th><th>难度</th><th>创建时间</th></tr></thead><tbody>';
-            latestProblems.forEach(problem => {
-                html += `
-                    <tr>
-                        <td>${problem.id}</td>
-                        <td><a href="/ojtest/problem/detail.html?id=${problem.id}" style="color: #3498db; text-decoration: none;">${problem.title}</a></td>
-                        <td>${problem.difficulty}</td>
-                        <td>${problem.createTime}</td>
-                    </tr>
-                `;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        // 页面加载时渲染最新题目
-        window.addEventListener('load', renderLatestProblems);
-    </script>
+    <script src="js/common.js"></script>
 </body>
 </html>
