@@ -4,50 +4,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 - Nugget OJ</title>
-    <link rel="stylesheet" href="/ojtest/css/common.css">
-    <link rel="stylesheet" href="/ojtest/css/login.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Inter', sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+            color: #fff;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            overflow-x: hidden;
+        }
+        @keyframes gradientBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 1s ease forwards;
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            position: relative;
+        }
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: #fff;
+            border-radius: 3px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+        input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+        .register-btn {
+            width: 100%;
+            padding: 1.2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a2a6c;
+            background: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
+        }
+        .register-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            color: #b21f1f;
+        }
+        .register-btn::after {
+            content: '';
+            position: relative;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .register-btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        .link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+        .link a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .link a:hover {
+            color: #ffd700;
+            text-decoration: underline;
+        }
+        .error {
+            color: #ff4444;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .success {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 1.8rem; }
+            h1 { font-size: 1.8rem; }
+            .form-group { margin-bottom: 1.2rem; }
+            input { padding: 0.9rem; }
+            .register-btn { padding: 1rem; font-size: 1.1rem; }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="container header-content">
-            <a href="/ojtest/index.html" class="logo">Nugget OJ</a>
-            <div class="nav">
-                <!-- 由 common.js 动态渲染 -->
-            </div>
-        </div>
-    </header>
-
     <div class="container">
-        <div class="login-card">
-            <h2>用户注册</h2>
-            <div id="alert-area"></div>
-            <form id="register-form">
-                <div class="form-group">
-                    <label for="username">用户名</label>
-                    <input type="text" id="username" class="form-control" placeholder="请输入用户名（字母/数字）" required>
-                </div>
-                <div class="form-group">
-                    <label for="nickname">昵称</label>
-                    <input type="text" id="nickname" class="form-control" placeholder="请输入昵称（可选）">
-                </div>
-                <div class="form-group">
-                    <label for="password">密码</label>
-                    <input type="password" id="password" class="form-control" placeholder="请输入密码（至少6位）" required>
-                </div>
-                <div class="form-group">
-                    <label for="confirm-password">确认密码</label>
-                    <input type="password" id="confirm-password" class="form-control" placeholder="请再次输入密码" required>
-                </div>
-                <button type="submit" class="btn btn-success" style="width: 100%; padding: 12px;">注册</button>
-                <div style="text-align: center; margin-top: 20px;">
-                    <span>已有账号？</span>
-                    <a href="/ojtest/login.html" style="color: #3498db;">立即登录</a>
-                </div>
-            </form>
-        </div>
+        <h1>账号注册</h1>
+        <div class="error" id="errorMsg"></div>
+        <div class="success" id="successMsg"></div>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required placeholder="请输入用户名（3-16位）">
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required placeholder="请输入密码（6-20位）">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="请再次输入密码">
+            </div>
+            <button type="submit" class="register-btn">注册</button>
+            <div class="link">
+                已有账号？<a href="login.html">立即登录</a>
+            </div>
+        </form>
     </div>
-
-    <script src="/ojtest/js/common.js"></script>
-    <script src="/ojtest/js/register.js"></script>
+    <script src="js/register.js"></script>
+    <script src="js/common.js"></script>
 </body>
 </html>
