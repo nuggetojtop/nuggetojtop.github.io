@@ -1,0 +1,5 @@
+permalink: /:title/
+redirects:
+  - from: /ojtest/*
+    to: /404.html
+    status: 404
