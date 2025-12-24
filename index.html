@@ -2,468 +2,60 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>安全密码输入</title>
-  <!-- 引入Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 引入Font Awesome -->
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  
-  <!-- 自定义配置 -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#4F46E5', // 主色调：柔和的靛蓝色
-            secondary: '#F3F4F6', // 辅助色：浅灰色
-            success: '#10B981', // 成功色：绿色
-            warning: '#F59E0B', // 警告色：橙色
-            danger: '#EF4444', // 危险色：红色
-          },
-          fontFamily: {
-            inter: ['Inter', 'system-ui', 'sans-serif'],
-          },
-          boxShadow: {
-            'input': '0 2px 10px rgba(0, 0, 0, 0.05)',
-            'input-focus': '0 0 0 3px rgba(79, 70, 229, 0.15)',
-          }
-        },
-      }
-    }
-  </script>
-  
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .password-strength-bar {
-        height: 4px;
-        transition: width 0.3s ease, background-color 0.3s ease;
-      }
-      .input-animation {
-        transition: all 0.2s ease-in-out;
-      }
-      .btn-hover {
-        transition: all 0.2s ease;
-      }
-      .btn-hover:hover {
-        transform: translateY(-1px);
-      }
-      .text-blink {
-        animation: blink 1.5s infinite;
-      }
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-    }
+  <title>QMetro Group</title>
+  <style>
+    /* 极简样式，够用即可 */
+    body { max-width: 400px; margin: 2rem auto; padding: 0 1rem; }
+    .input-group { margin: 1rem 0; }
+    input { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+    button { width: 100%; padding: 0.8rem; background: #0078d4; color: white; border: none; cursor: pointer; }
+    #result { margin-top: 1rem; padding: 1rem; border: 1px solid #eee; }
+    .success { color: #008000; }
+    .error { color: #ff0000; }
   </style>
 </head>
-<body class="font-inter bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
-  <!-- 主容器 -->
-  <div class="w-full max-w-md bg-white rounded-xl shadow-md p-6 sm:p-8 transform transition-all duration-300 hover:shadow-lg">
-    <div class="text-center mb-8">
-      <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800 mb-2">安全密码输入</h1>
-      <p class="text-gray-500 text-sm sm:text-base">请设置一个强密码，保护您的账户安全</p>
-    </div>
-    
-    <!-- 密码输入区域 -->
-    <div class="space-y-4">
-      <!-- 密码输入框 -->
-      <div class="relative">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-        <div class="relative">
-          <input 
-            type="password" 
-            id="password" 
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 input-animation focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:shadow-input-focus"
-            placeholder="请输入密码（至少8位）"
-            autocomplete="new-password"
-          >
-          <!-- 显示/隐藏密码按钮 -->
-          <button 
-            id="togglePassword" 
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
-            aria-label="显示密码"
-          >
-            <i class="fa fa-eye-slash text-lg"></i>
-          </button>
-        </div>
-      </div>
-      
-      <!-- 确认密码输入框 -->
-      <div class="relative">
-        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
-        <div class="relative">
-          <input 
-            type="password" 
-            id="confirmPassword" 
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 input-animation focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 focus:shadow-input-focus"
-            placeholder="请再次输入密码"
-            autocomplete="new-password"
-          >
-          <!-- 显示/隐藏确认密码按钮 -->
-          <button 
-            id="toggleConfirmPassword" 
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
-            aria-label="显示确认密码"
-          >
-            <i class="fa fa-eye-slash text-lg"></i>
-          </button>
-        </div>
-      </div>
-      
-      <!-- 密码强度指示器 -->
-      <div class="space-y-2">
-        <div class="flex justify-between items-center">
-          <span id="strengthText" class="text-sm text-gray-500">密码强度</span>
-          <span id="lengthIndicator" class="text-xs text-gray-400">0/8 字符</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full overflow-hidden">
-          <div id="strengthBar" class="password-strength-bar bg-gray-300 w-0"></div>
-        </div>
-        <div id="strengthDescription" class="text-xs text-gray-400 text-right">请输入密码</div>
-      </div>
-      
-      <!-- 密码要求提示 -->
-      <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-        <p class="text-xs text-gray-500 mb-2">密码要求：</p>
-        <ul class="text-xs text-gray-500 space-y-1">
-          <li class="flex items-center">
-            <i id="checkLength" class="fa fa-circle-o mr-1 text-gray-400"></i>
-            <span>至少8个字符</span>
-          </li>
-          <li class="flex items-center">
-            <i id="checkUpper" class="fa fa-circle-o mr-1 text-gray-400"></i>
-            <span>包含大写字母</span>
-          </li>
-          <li class="flex items-center">
-            <i id="checkLower" class="fa fa-circle-o mr-1 text-gray-400"></i>
-            <span>包含小写字母</span>
-          </li>
-          <li class="flex items-center">
-            <i id="checkNumber" class="fa fa-circle-o mr-1 text-gray-400"></i>
-            <span>包含数字</span>
-          </li>
-          <li class="flex items-center">
-            <i id="checkSpecial" class="fa fa-circle-o mr-1 text-gray-400"></i>
-            <span>包含特殊符号</span>
-          </li>
-        </ul>
-      </div>
-      
-      <!-- 生成强密码按钮 -->
-      <button 
-        id="generatePassword" 
-        class="w-full py-3 px-4 bg-primary/10 text-primary rounded-lg font-medium btn-hover hover:bg-primary/20 active:bg-primary/30 transition-colors flex items-center justify-center"
-      >
-        <i class="fa fa-magic mr-2"></i>
-        <span>生成强密码</span>
-      </button>
-      
-      <!-- 提交按钮 -->
-      <button 
-        id="submitBtn" 
-        class="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium btn-hover hover:bg-primary/90 active:bg-primary/80 transition-colors mt-2 opacity-50 cursor-not-allowed"
-        disabled
-      >
-        确认设置
-      </button>
-    </div>
-    
-    <!-- 底部提示 -->
-    <div class="mt-6 text-center text-xs text-gray-400">
-      <p>密码将被加密存储，请勿使用容易猜测的信息</p>
-    </div>
+<body>
+  <h1>Welcome To QMetro Group!</h1>
+  <div class="input-group">
+    <label>成员姓名</label>
+    <input type="text" id="name" placeholder="请输入姓名（拼音全拼）">
   </div>
-  
-  <!-- 成功提示弹窗 -->
-  <div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300">
-      <div class="text-center">
-        <div class="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i class="fa fa-check text-2xl text-success"></i>
-        </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">设置成功！</h3>
-        <p class="text-gray-500 mb-4">您的密码已安全设置完成</p>
-        <button id="closeModal" class="w-full py-2 bg-primary text-white rounded-lg font-medium btn-hover hover:bg-primary/90">
-          完成
-        </button>
-      </div>
-    </div>
+  <div class="input-group">
+    <label>64位Token</label>
+    <input type="text" id="token" placeholder="请输入64位Token">
   </div>
+  <button onclick="checkMember()">判定归属</button>
+  <div id="result"></div>
 
   <script>
-    // DOM元素
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const togglePasswordBtn = document.getElementById('togglePassword');
-    const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
-    const generatePasswordBtn = document.getElementById('generatePassword');
-    const submitBtn = document.getElementById('submitBtn');
-    const strengthBar = document.getElementById('strengthBar');
-    const strengthText = document.getElementById('strengthText');
-    const strengthDescription = document.getElementById('strengthDescription');
-    const lengthIndicator = document.getElementById('lengthIndicator');
-    const successModal = document.getElementById('successModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    
-    // 密码要求检查项
-    const checkLength = document.getElementById('checkLength');
-    const checkUpper = document.getElementById('checkUpper');
-    const checkLower = document.getElementById('checkLower');
-    const checkNumber = document.getElementById('checkNumber');
-    const checkSpecial = document.getElementById('checkSpecial');
-    
-    // 特殊符号集合
-    const specialChars = '~!@#$%^&*()-_+=[]{}|;:,.?`';
-    
-    // 显示/隐藏密码切换
-    function togglePasswordVisibility(input, button) {
-      const type = input.type === 'password' ? 'text' : 'password';
-      input.type = type;
-      
-      // 更新图标
-      const icon = button.querySelector('i');
-      if (type === 'text') {
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-        button.setAttribute('aria-label', '隐藏密码');
-      } else {
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-        button.setAttribute('aria-label', '显示密码');
+    // 判定逻辑
+    async function checkMember() {
+      const name = document.getElementById('name').value.trim();
+      const token = document.getElementById('token').value.trim();
+      const resultEl = document.getElementById('result');
+
+      // 空值校验
+      if (!name || !token) {
+        resultEl.innerHTML = '<span class="error">姓名和Token不能为空！</span>';
+        return;
       }
-    }
-    
-    togglePasswordBtn.addEventListener('click', () => {
-      togglePasswordVisibility(passwordInput, togglePasswordBtn);
-    });
-    
-    toggleConfirmPasswordBtn.addEventListener('click', () => {
-      togglePasswordVisibility(confirmPasswordInput, toggleConfirmPasswordBtn);
-    });
-    
-    // 密码强度检测
-    function checkPasswordStrength(password) {
-      let strength = 0;
-      let strengthClass = 'bg-gray-300';
-      let strengthLabel = '弱';
-      let strengthDesc = '密码强度过低';
-      
-      // 检查长度
-      if (password.length >= 8) {
-        strength += 1;
-        checkLength.classList.remove('fa-circle-o', 'text-gray-400');
-        checkLength.classList.add('fa-check-circle', 'text-success');
-      } else {
-        checkLength.classList.remove('fa-check-circle', 'text-success');
-        checkLength.classList.add('fa-circle-o', 'text-gray-400');
-      }
-      
-      // 检查大写字母
-      if (/[A-Z]/.test(password)) {
-        strength += 1;
-        checkUpper.classList.remove('fa-circle-o', 'text-gray-400');
-        checkUpper.classList.add('fa-check-circle', 'text-success');
-      } else {
-        checkUpper.classList.remove('fa-check-circle', 'text-success');
-        checkUpper.classList.add('fa-circle-o', 'text-gray-400');
-      }
-      
-      // 检查小写字母
-      if (/[a-z]/.test(password)) {
-        strength += 1;
-        checkLower.classList.remove('fa-circle-o', 'text-gray-400');
-        checkLower.classList.add('fa-check-circle', 'text-success');
-      } else {
-        checkLower.classList.remove('fa-check-circle', 'text-success');
-        checkLower.classList.add('fa-circle-o', 'text-gray-400');
-      }
-      
-      // 检查数字
-      if (/[0-9]/.test(password)) {
-        strength += 1;
-        checkNumber.classList.remove('fa-circle-o', 'text-gray-400');
-        checkNumber.classList.add('fa-check-circle', 'text-success');
-      } else {
-        checkNumber.classList.remove('fa-check-circle', 'text-success');
-        checkNumber.classList.add('fa-circle-o', 'text-gray-400');
-      }
-      
-      // 检查特殊符号
-      if (specialChars.split('').some(char => password.includes(char))) {
-        strength += 1;
-        checkSpecial.classList.remove('fa-circle-o', 'text-gray-400');
-        checkSpecial.classList.add('fa-check-circle', 'text-success');
-      } else {
-        checkSpecial.classList.remove('fa-check-circle', 'text-success');
-        checkSpecial.classList.add('fa-circle-o', 'text-gray-400');
-      }
-      
-      // 更新强度指示器
-      const widthPercentage = (strength / 5) * 100;
-      strengthBar.style.width = `${widthPercentage}%`;
-      
-      // 设置强度颜色和描述
-      switch(strength) {
-        case 0:
-        case 1:
-          strengthClass = 'bg-danger';
-          strengthLabel = '弱';
-          strengthDesc = '密码强度过低，容易被破解';
-          break;
-        case 2:
-          strengthClass = 'bg-warning';
-          strengthLabel = '中';
-          strengthDesc = '密码强度一般，建议增加复杂度';
-          break;
-        case 3:
-          strengthClass = 'bg-yellow-500';
-          strengthLabel = '较强';
-          strengthDesc = '密码强度良好，但仍有提升空间';
-          break;
-        case 4:
-        case 5:
-          strengthClass = 'bg-success';
-          strengthLabel = '强';
-          strengthDesc = '密码强度优秀，安全性高';
-          break;
-      }
-      
-      // 更新UI
-      strengthBar.className = `password-strength-bar ${strengthClass} w-[${widthPercentage}%]`;
-      strengthText.textContent = `密码强度：${strengthLabel}`;
-      strengthDescription.textContent = strengthDesc;
-      
-      // 更新长度指示器
-      lengthIndicator.textContent = `${password.length}/8 字符`;
-      
-      return strength;
-    }
-    
-    // 验证密码是否匹配
-    function validatePasswordMatch() {
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
-      
-      if (confirmPassword) {
-        if (password === confirmPassword) {
-          confirmPasswordInput.classList.remove('border-danger');
-          confirmPasswordInput.classList.add('border-success');
-          return true;
+
+      try {
+        // 加载JSON数据
+        const res = await fetch('members.json');
+        const members = await res.json();
+        // 匹配姓名+Token
+        const isMatch = members.some(m => m.name === name && m.token === token);
+        
+        if (isMatch) {
+          resultEl.innerHTML = '<span class="success">✅ 归属成功：该成员属于你的数据</span>';
         } else {
-          confirmPasswordInput.classList.remove('border-success');
-          confirmPasswordInput.classList.add('border-danger');
-          return false;
+          resultEl.innerHTML = '<span class="error">❌ 归属失败：姓名/Token错误，非你的数据</span>';
         }
-      }
-      return false;
-    }
-    
-    // 更新提交按钮状态
-    function updateSubmitButtonState() {
-      const password = passwordInput.value;
-      const confirmPassword = confirmPasswordInput.value;
-      const strength = checkPasswordStrength(password);
-      const isMatch = validatePasswordMatch();
-      
-      if (password.length >= 8 && confirmPassword.length >= 8 && isMatch && strength >= 3) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-      } else {
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } catch (err) {
+        resultEl.innerHTML = '<span class="error">❌ 系统错误：' + err.message + '</span>';
       }
     }
-    
-    // 生成强密码
-    function generateStrongPassword() {
-      const length = 16;
-      let password = '';
-      
-      // 确保包含所有类型的字符
-      password += getRandomChar('ABCDEFGHIJKLMNOPQRSTUVWXYZ'); // 大写字母
-      password += getRandomChar('abcdefghijklmnopqrstuvwxyz'); // 小写字母
-      password += getRandomChar('0123456789'); // 数字
-      password += getRandomChar(specialChars); // 特殊符号
-      
-      // 填充剩余字符
-      const allChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + specialChars;
-      for (let i = 4; i < length; i++) {
-        password += getRandomChar(allChars);
-      }
-      
-      // 打乱密码顺序
-      password = shuffleString(password);
-      
-      // 填充到输入框
-      passwordInput.value = password;
-      confirmPasswordInput.value = password;
-      
-      // 更新UI状态
-      checkPasswordStrength(password);
-      updateSubmitButtonState();
-      
-      // 短暂提示
-      strengthDescription.textContent = '已生成强密码，可直接使用';
-      strengthDescription.classList.add('text-primary', 'text-blink');
-      setTimeout(() => {
-        strengthDescription.classList.remove('text-primary', 'text-blink');
-      }, 2000);
-    }
-    
-    // 获取随机字符
-    function getRandomChar(charSet) {
-      return charSet[Math.floor(Math.random() * charSet.length)];
-    }
-    
-    // 打乱字符串
-    function shuffleString(str) {
-      return str.split('').sort(() => Math.random() - 0.5).join('');
-    }
-    
-    // 显示成功弹窗
-    function showSuccessModal() {
-      successModal.classList.remove('opacity-0', 'pointer-events-none');
-      successModal.querySelector('div').classList.remove('scale-95');
-      successModal.querySelector('div').classList.add('scale-100');
-    }
-    
-    // 关闭成功弹窗
-    function closeSuccessModal() {
-      successModal.classList.add('opacity-0', 'pointer-events-none');
-      successModal.querySelector('div').classList.remove('scale-100');
-      successModal.querySelector('div').classList.add('scale-95');
-      
-      // 重置表单
-      passwordInput.value = '';
-      confirmPasswordInput.value = '';
-      checkPasswordStrength('');
-      updateSubmitButtonState();
-    }
-    
-    // 事件监听
-    passwordInput.addEventListener('input', () => {
-      checkPasswordStrength(passwordInput.value);
-      updateSubmitButtonState();
-    });
-    
-    confirmPasswordInput.addEventListener('input', () => {
-      validatePasswordMatch();
-      updateSubmitButtonState();
-    });
-    
-    generatePasswordBtn.addEventListener('click', generateStrongPassword);
-    
-    submitBtn.addEventListener('click', showSuccessModal);
-    
-    closeModalBtn.addEventListener('click', closeSuccessModal);
-    
-    // 初始化
-    checkPasswordStrength('');
   </script>
 </body>
 </html>
