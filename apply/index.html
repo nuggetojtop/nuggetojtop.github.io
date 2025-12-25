@@ -8,7 +8,7 @@
     .input-group { margin: 1rem 0; }
     input, textarea { width: 100%; padding: 0.5rem; box-sizing: border-box; }
     button { width: 100%; padding: 0.8rem; background: #0078d4; color: white; border: none; cursor: pointer; }
-    button:disabled { background: #ccc; cursor: not-allowed; } /* 禁用状态样式 */
+    button:disabled { background: #ccc; cursor: not-allowed; }
     #result { margin-top: 1rem; padding: 1rem; border: 1px solid #eee; }
     .success { color: green; }
     .error { color: red; }
@@ -18,30 +18,32 @@
   <h1>成员加入申请</h1>
   <div class="input-group">
     <label>姓名</label>
-    <!-- 移除required属性，改用JS校验 -->
     <input type="text" id="name" placeholder="请输入姓名">
   </div>
   <div class="input-group">
     <label>64位Token</label>
-    <!-- 移除required属性，改用JS校验 -->
     <input type="password" id="token" placeholder="请输入64位Token">
   </div>
   <div class="input-group">
     <label>申请理由（选填）</label>
     <textarea id="reason" rows="3" placeholder="请输入申请理由"></textarea>
   </div>
-  <!-- 按钮增加id，用于控制禁用状态 -->
   <button id="submitBtn" onclick="submitApply()">提交申请</button>
   <div id="result"></div>
 
   <!-- 引入Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
   <script>
-    const supabaseUrl = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8"; 
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // 第一步：先初始化supabase，放在所有逻辑最顶部（关键！）
+    // 替换为你真实的Publishable Key（以eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.开头）
+    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDQwMDAsImV4cCI6MjA4NzQ4MDAwMH0.XXXXXX";
+    
+    // 立即初始化supabase实例，确保优先完成
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    console.log("Supabase初始化完成：", supabase); // 控制台验证是否初始化成功
 
-    // SHA-256加密函数（兼容所有浏览器）
+    // SHA-256加密函数
     async function sha256Encrypt(rawStr) {
       try {
         const encoder = new TextEncoder();
@@ -54,7 +56,7 @@
       }
     }
 
-    // 提交申请逻辑（增加加载状态+完整异常捕获）
+    // 提交申请核心逻辑
     async function submitApply() {
       const name = document.getElementById('name').value.trim();
       const token = document.getElementById('token').value.trim();
@@ -62,11 +64,11 @@
       const resultEl = document.getElementById('result');
       const submitBtn = document.getElementById('submitBtn');
 
-      // 1. 禁用按钮，防止重复点击
+      // 禁用按钮防重复点击
       submitBtn.disabled = true;
       resultEl.innerHTML = '';
 
-      // 2. 手动校验（替代原生required）
+      // 基础校验
       if (!name) {
         resultEl.innerHTML = '<span class="error">❌ 姓名不能为空！</span>';
         submitBtn.disabled = false;
@@ -84,24 +86,29 @@
       }
 
       try {
-        // 3. 加密Token
+        // 校验supabase是否初始化成功（新增防护）
+        if (!supabase) {
+          throw new Error("Supabase实例未初始化，请检查密钥和URL是否正确");
+        }
+
+        // 加密Token
         const tokenHash = await sha256Encrypt(token);
-        
-        // 4. 存入Supabase待审核表
+
+        // 插入数据到Supabase（此时supabase已确保初始化完成）
         const { data, error } = await supabase
-          .from('apply_requests') // 确认表名和Supabase里的一致（小写）
-          .insert([{ 
-            name: name, 
-            token_hash: tokenHash, 
+          .from('apply_requests')
+          .insert([{
+            name: name,
+            token_hash: tokenHash,
             reason: reason,
-            status: 'pending' // 显式指定审核状态，避免表默认值失效
+            status: 'pending'
           }]);
 
         if (error) {
-          throw new Error(`Supabase存储失败：${error.message}（检查表名/字段名是否正确）`);
+          throw new Error(`数据提交失败：${error.message}`);
         }
 
-        // 5. 提交成功
+        // 提交成功
         resultEl.innerHTML = '<span class="success">✅ 申请提交成功！请等待管理员审核</span>';
         // 清空表单
         document.getElementById('name').value = '';
@@ -109,12 +116,12 @@
         document.getElementById('reason').value = '';
 
       } catch (err) {
-        // 6. 捕获所有异常
+        // 异常提示
         resultEl.innerHTML = `<span class="error">❌ 提交失败：${err.message}</span>`;
-        console.error('提交申请异常：', err); // 控制台打印详细错误，方便排查
+        console.error("提交失败详情：", err);
 
       } finally {
-        // 7. 恢复按钮可用状态
+        // 恢复按钮
         submitBtn.disabled = false;
       }
     }
