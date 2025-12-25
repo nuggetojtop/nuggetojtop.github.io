@@ -183,10 +183,7 @@
       }
     }
 
-    /**
-     * 生成英文PDF证书
-     * @param {string} name - 成员姓名
-     */
+
     function generateCertificate(name) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({
@@ -194,8 +191,8 @@
         unit: 'mm',
         format: 'a4'
       });
-
-      // 英文证书内容
+    
+      // 证书内容
       const now = new Date();
       const certDate = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
       
@@ -219,9 +216,17 @@
       
       // Issuer
       doc.text('Issued by: nuggetoj.top', 120, 120);
-      
-      // Save PDF
-      doc.save(`${name}_Member_Certificate_${certDate.replace(/\//g, '-')}.pdf`);
+      const imageUrl = 'https://i.imgur.com/你的图片ID.png';
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        const imgWidth = 120;
+        const imgX = (210 - imgWidth) / 2;
+        const imgY = 140;
+        doc.addImage(img, 'PNG', imgX, imgY, imgWidth, 0);
+        doc.save(`${name}_Member_Certificate_${certDate.replace(/\//g, '-')}.pdf`);
+      };
+      img.src = imageUrl;
     }
 
     /**
