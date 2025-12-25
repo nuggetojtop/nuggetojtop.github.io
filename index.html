@@ -211,7 +211,7 @@
       doc.setFontSize(12);
       doc.text(`Issue Date: ${certDate}`, 120, 100);
       // 移除Issued by文本，避免乱码重叠
-      // doc.text(`Issued by: QMet Group`, 120, 120);
+      doc.text(`Issued by: QMet Group`, 120, 120);
 
       // ========== 核心修复：同步加载+无兜底文本+强制透明PNG绘制 ==========
       const img1 = new Image();
