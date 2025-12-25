@@ -149,17 +149,13 @@
     <div id="result"></div>
   </div>
 
-  <!-- 修正依赖顺序+移除冗余插件 -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   
   <script>
-    // ===================== 配置项 =====================
     const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
-    // ==========================================================================
 
-    // 初始化Supabase（提前做错误捕获）
     let supabase;
     try {
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -169,9 +165,6 @@
       alert("系统初始化失败，请刷新页面重试");
     }
 
-    /**
-     * SHA-256加密函数
-     */
     async function sha256Encrypt(rawStr) {
       try {
         const encoder = new TextEncoder();
@@ -185,8 +178,7 @@
     }
 
     /**
-     * 生成PDF（简化字体方案，避免兼容性问题）
-     * 注：若需完美中文，推荐使用「中文转图片」方案，或换用pdfmake库
+     * 生成PDF函数（仅修改此函数：图片与署名重叠）
      */
     function generateCertificate(name) {
       const { jsPDF } = window.jspdf;
@@ -196,11 +188,11 @@
         format: 'a4'
       });
 
-      // 证书内容（优先用英文+数字，避免中文乱码；姓名单独处理）
+      // 证书基础内容
       const now = new Date();
       const certDate = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
       
-      // Title（英文避免乱码）
+      // 标题
       doc.setFontSize(20);
       doc.text('Member Certificate (V1)', 105, 40, { align: 'center' });
       
@@ -208,7 +200,7 @@
       doc.setLineWidth(0.5);
       doc.line(40, 50, 170, 50);
       
-      // 正文（姓名保留中文，其余英文）
+      // 正文
       doc.setFontSize(14);
       doc.text(`Certification for: ${name}`, 105, 70, { align: 'center' });
       doc.text(`Valid member of QMet Group`, 105, 85, { align: 'center' });
@@ -217,27 +209,34 @@
       doc.setFontSize(12);
       doc.text(`Issue Date: ${certDate}`, 120, 100);
       
-      // 签发方
+      // ========== 核心修改：图片与署名重叠 ==========
+      // 1. 先绘制署名文字（会被图片重叠覆盖部分）
+      doc.setFontSize(12);
       doc.text(`Issued by: QMet Group`, 120, 120);
-
-      // 图片加载逻辑
-      const imageUrl = 'https://cdn.luogu.com.cn/upload/image_hosting/yqamjktp.png';
+      
+      // 2. 加载指定图片，覆盖在署名位置（重叠显示）
+      const imageUrl = 'https://cdn.luogu.com.cn/upload/image_hosting/tntthtef.png';
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
       img.onload = function() {
-        const imgWidth = 120;
-        const imgX = (210 - imgWidth) / 2;
-        const imgY = 140;
-        doc.addImage(img, 'PNG', imgX, imgY, imgWidth, 0);
+        // 调整图片大小和位置，与署名重叠
+        const imgWidth = 80;    // 图片宽度（缩小至80mm）
+        const imgX = 90;        // 图片X坐标（居中偏右，覆盖署名）
+        const imgY = 110;       // 图片Y坐标（与署名Y=120重叠）
+        doc.addImage(img, 'PNG', imgX, imgY, imgWidth, 0); // 0=自动按比例缩放高度
+        
+        // 保存PDF
         doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
       };
       
+      // 图片加载失败兜底
       img.onerror = function() {
         console.warn("图片加载失败，生成无图片的PDF");
         doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
       };
       
+      // 图片加载超时兜底（5秒）
       setTimeout(() => {
         if (!img.complete) img.onerror();
       }, 5000);
@@ -245,11 +244,7 @@
       img.src = imageUrl;
     }
 
-    /**
-     * 核心认证逻辑（简化+增加错误捕获）
-     */
     async function authMember() {
-      // 前置校验：确保Supabase初始化成功
       if (!supabase) {
         document.getElementById('result').innerHTML = '<span class="error">❌ 系统初始化失败，请刷新页面！</span>';
         return;
@@ -260,11 +255,9 @@
       const resultEl = document.getElementById('result');
       const authBtn = document.getElementById('authBtn');
 
-      // 禁用按钮
       authBtn.disabled = true;
       resultEl.innerHTML = '';
 
-      // 基础校验
       if (!name) {
         resultEl.innerHTML = '<span class="error">❌ 姓名不能为空！</span>';
         authBtn.disabled = false;
@@ -282,10 +275,7 @@
       }
 
       try {
-        // 加密Token
         const inputTokenHash = await sha256Encrypt(rawToken);
-        
-        // 拉取成员数据
         const { data: members, error } = await supabase
           .from('official_members')
           .select('name, token_hash');
@@ -293,17 +283,12 @@
         if (error) throw new Error(`加载成员数据失败: ${error.message}`);
         if (members.length === 0) throw new Error('暂无正式成员数据！');
 
-        // 匹配验证
-        const isMatch = members.some(m => {
-          return m.name === name && m.token_hash === inputTokenHash;
-        });
+        const isMatch = members.some(m => m.name === name && m.token_hash === inputTokenHash);
 
         if (isMatch) {
           resultEl.innerHTML = '<span class="success">✅ 认证成功！正在生成证书...</span>';
-          // 确保DOM渲染完成后再生成PDF
           setTimeout(() => {
             generateCertificate(name);
-            // 清空表单
             document.getElementById('name').value = '';
             document.getElementById('token').value = '';
           }, 300);
@@ -312,25 +297,18 @@
         }
 
       } catch (err) {
-        // 错误提示（中文+英文）
         resultEl.innerHTML = `<span class="error">❌ 操作失败：${err.message}</span>`;
         console.error("认证错误:", err);
       } finally {
-        // 恢复按钮（必执行）
         authBtn.disabled = false;
       }
     }
 
-    /**
-     * 申请加入按钮逻辑
-     */
     function goToApplyPage() {
       window.location.href = 'apply';
     }
 
-    // ========== 修复按钮失效核心：确保DOM加载完成后绑定事件 ==========
     document.addEventListener('DOMContentLoaded', function() {
-      // 绑定验证按钮
       const authBtn = document.getElementById('authBtn');
       if (authBtn) {
         authBtn.addEventListener('click', authMember);
@@ -339,7 +317,6 @@
         console.error("未找到验证按钮DOM元素");
       }
 
-      // 绑定申请按钮
       const applyBtn = document.getElementById('applyBtn');
       if (applyBtn) {
         applyBtn.addEventListener('click', goToApplyPage);
@@ -349,7 +326,6 @@
       }
     });
 
-    // 安全防护
     document.oncontextmenu = () => false;
     document.onkeydown = (e) => {
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
