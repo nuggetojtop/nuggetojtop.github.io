@@ -178,7 +178,7 @@
     }
 
     /**
-     * 生成PDF函数（仅修改此函数：图片与署名重叠）
+     * 修复后的generateCertificate函数：支持加载两个图片，无重复下载、无语法错误
      */
     function generateCertificate(name) {
       const { jsPDF } = window.jspdf;
@@ -192,7 +192,7 @@
       const now = new Date();
       const certDate = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
       
-      // 标题
+      // Title
       doc.setFontSize(20);
       doc.text('Member Certificate (V1)', 105, 40, { align: 'center' });
       
@@ -209,39 +209,68 @@
       doc.setFontSize(12);
       doc.text(`Issue Date: ${certDate}`, 120, 100);
       
-      // ========== 核心修改：图片与署名重叠 ==========
-      // 1. 先绘制署名文字（会被图片重叠覆盖部分）
-      doc.setFontSize(12);
+      // 签发方
       doc.text(`Issued by: QMet Group`, 120, 120);
-      
-      // 2. 加载指定图片，覆盖在署名位置（重叠显示）
-      const imageUrl = 'https://cdn.luogu.com.cn/upload/image_hosting/tntthtef.png';
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = function() {
-        // 调整图片大小和位置，与署名重叠
-        const imgWidth = 80;    // 图片宽度（缩小至80mm）
-        const imgX = 90;        // 图片X坐标（居中偏右，覆盖署名）
-        const imgY = 110;       // 图片Y坐标（与署名Y=120重叠）
-        doc.addImage(img, 'PNG', imgX, imgY, imgWidth, 0); // 0=自动按比例缩放高度
+
+      // ========== 核心修复：统一管理两个图片加载 ==========
+      // 图片1配置
+      const img1Config = {
+        url: 'https://cdn.luogu.com.cn/upload/image_hosting/yqamjktp.png',
+        width: 120,
+        x: (210 - 120) / 2,
+        y: 140
+      };
+      // 图片2配置（可调整位置/大小实现重叠）
+      const img2Config = {
+        url: 'https://cdn.luogu.com.cn/upload/image_hosting/p72cc51k.png',
+        width: 120,
+        x: (210 - 120) / 2, // 与图片1同X坐标（居中）
+        y: 140              // 与图片1同Y坐标（重叠），可改为150实现上下排列
+      };
+
+      // 计数：记录已加载的图片数量
+      let loadedImgCount = 0;
+      // 总图片数
+      const totalImgCount = 2;
+
+      // 通用图片加载函数
+      function loadImage(imgConfig) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
         
-        // 保存PDF
-        doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
-      };
-      
-      // 图片加载失败兜底
-      img.onerror = function() {
-        console.warn("图片加载失败，生成无图片的PDF");
-        doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
-      };
-      
-      // 图片加载超时兜底（5秒）
+        img.onload = function() {
+          // 绘制图片
+          doc.addImage(img, 'PNG', imgConfig.x, imgConfig.y, imgConfig.width, 0);
+          loadedImgCount++;
+          // 所有图片加载完成后，只保存一次PDF
+          if (loadedImgCount === totalImgCount) {
+            doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+          }
+        };
+        
+        img.onerror = function() {
+          console.warn(`图片加载失败: ${imgConfig.url}`);
+          loadedImgCount++;
+          // 即使部分图片加载失败，仍生成PDF
+          if (loadedImgCount === totalImgCount) {
+            doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+          }
+        };
+
+        img.src = imgConfig.url;
+      }
+
+      // 加载两个图片
+      loadImage(img1Config);
+      loadImage(img2Config);
+
+      // 全局超时兜底（8秒）：防止图片加载卡死
       setTimeout(() => {
-        if (!img.complete) img.onerror();
-      }, 5000);
-      
-      img.src = imageUrl;
+        if (loadedImgCount < totalImgCount) {
+          console.warn("图片加载超时，强制生成PDF");
+          doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+        }
+      }, 8000);
     }
 
     async function authMember() {
