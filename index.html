@@ -259,7 +259,7 @@
 
         // 绘制透明PNG（覆盖原署名位置，无文本兜底）
         if (img2.complete) {
-          doc.addImage(img2, 'PNG', 60, 80, 60, 0); // 覆盖原Issued by位置
+          doc.addImage(img2, 'PNG', 100, 110, 60, 0); // 覆盖原Issued by位置
           console.log("透明PNG绘制成功");
         } else {
           doc.setDrawColor(0, 255, 0);
