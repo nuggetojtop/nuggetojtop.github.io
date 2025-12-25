@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>加入申请</title>
+  <style>
+    body { max-width: 400px; margin: 2rem auto; padding: 0 1rem; }
+    .input-group { margin: 1rem 0; }
+    input, textarea { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+    button { width: 100%; padding: 0.8rem; background: #0078d4; color: white; border: none; cursor: pointer; }
+    #result { margin-top: 1rem; padding: 1rem; border: 1px solid #eee; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>成员加入申请</h1>
+  <div class="input-group">
+    <label>姓名</label>
+    <input type="text" id="name" placeholder="请输入姓名" required>
+  </div>
+  <div class="input-group">
+    <label>64位Token</label>
+    <input type="password" id="token" placeholder="请输入64位Token" required>
+  </div>
+  <div class="input-group">
+    <label>申请理由（选填）</label>
+    <textarea id="reason" rows="3" placeholder="请输入申请理由"></textarea>
+  </div>
+  <button onclick="submitApply()">提交申请</button>
+  <div id="result"></div>
+
+  <!-- 引入Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const supabaseUrl = "https://qcxrfubkltphtvdfiikp.supabase.co";
+    const supabaseKey = "sb_publishable_WF9Q30ENAtzuXCGDxg_UyA_bD_XOf2T";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    async function sha256Encrypt(rawStr) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(rawStr);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // 提交申请逻辑
+    async function submitApply() {
+      const name = document.getElementById('name').value.trim();
+      const token = document.getElementById('token').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const resultEl = document.getElementById('result');
+
+      // 校验
+      if (!name || !token) {
+        resultEl.innerHTML = '<span class="error">姓名和Token不能为空！</span>';
+        return;
+      }
+      if (token.length !== 64) {
+        resultEl.innerHTML = '<span class="error">Token必须为64位！</span>';
+        return;
+      }
+
+      try {
+        // 加密Token
+        const tokenHash = await sha256Encrypt(token);
+        // 存入待审核表
+        const { data, error } = await supabase
+          .from('apply_requests')
+          .insert([{ name, token_hash: tokenHash, reason }]);
+
+        if (error) throw error;
+        resultEl.innerHTML = '<span class="success">✅ 申请提交成功！请等待管理员审核</span>';
+        // 清空表单
+        document.getElementById('name').value = '';
+        document.getElementById('token').value = '';
+        document.getElementById('reason').value = '';
+      } catch (err) {
+        resultEl.innerHTML = `<span class="error">❌ 提交失败：${err.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
