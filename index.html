@@ -2,60 +2,232 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>QMetro Group</title>
+  <title>Welcome To QMet Group!</title>
   <style>
-    /* 极简样式，够用即可 */
-    body { max-width: 400px; margin: 2rem auto; padding: 0 1rem; }
-    .input-group { margin: 1rem 0; }
-    input { width: 100%; padding: 0.5rem; box-sizing: border-box; }
-    button { width: 100%; padding: 0.8rem; background: #0078d4; color: white; border: none; cursor: pointer; }
-    #result { margin-top: 1rem; padding: 1rem; border: 1px solid #eee; }
-    .success { color: #008000; }
-    .error { color: #ff0000; }
+    body { 
+      max-width: 400px; 
+      margin: 2rem auto; 
+      padding: 0 1rem; 
+      font-family: Arial, sans-serif;
+    }
+    .input-group { 
+      margin: 1.2rem 0; 
+    }
+    label { 
+      display: block; 
+      margin-bottom: 0.5rem; 
+      font-weight: 500;
+    }
+    input { 
+      width: 100%; 
+      padding: 0.7rem; 
+      box-sizing: border-box; 
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button { 
+      width: 100%; 
+      padding: 0.8rem; 
+      background: #0078d4; 
+      color: white; 
+      border: none; 
+      border-radius: 4px;
+      cursor: pointer; 
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    button:hover { 
+      background: #005a9e; 
+    }
+    button:disabled { 
+      background: #ccc; 
+      cursor: not-allowed; 
+    }
+    #result { 
+      margin-top: 1rem; 
+      padding: 1rem; 
+      border-radius: 4px;
+      border: 1px solid #eee; 
+    }
+    .success { 
+      color: #008000; 
+      font-weight: 500;
+    }
+    .error { 
+      color: #ff0000; 
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
-  <h1>Welcome To QMetro Group!</h1>
+  <h1 style="text-align: center;">This is QMet Group!</h1>
+  
   <div class="input-group">
-    <label>成员姓名</label>
-    <input type="text" id="name" placeholder="请输入姓名（拼音全拼）">
+    <label>姓名</label>
+    <input type="text" id="name" placeholder="请输入你的姓名">
   </div>
+  
   <div class="input-group">
     <label>64位Token</label>
-    <input type="text" id="token" placeholder="请输入64位Token">
+    <input type="password" id="token" placeholder="请输入64位Token字符串">
   </div>
-  <button onclick="checkMember()">判定归属</button>
+  
+  <button id="authBtn">验证并生成证书</button>
   <div id="result"></div>
 
+  <!-- 引入Supabase SDK + jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  
   <script>
-    // 判定逻辑
-    async function checkMember() {
-      const name = document.getElementById('name').value.trim();
-      const token = document.getElementById('token').value.trim();
-      const resultEl = document.getElementById('result');
+    // ===================== 配置项（替换为你的Supabase信息） =====================
+    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDQwMDAsImV4cCI6MjA4NzQ4MDAwMH0.XXXXXXXX";
+    // ==========================================================================
 
-      // 空值校验
-      if (!name || !token) {
-        resultEl.innerHTML = '<span class="error">姓名和Token不能为空！</span>';
+    // 优先初始化Supabase实例
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("Supabase初始化完成：", supabase);
+
+    /**
+     * SHA-256加密函数（不可逆，用于Token加密匹配）
+     * @param {string} rawStr - 原始64位Token
+     * @returns {string} 加密后的哈希值
+     */
+    async function sha256Encrypt(rawStr) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(rawStr);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {
+        throw new Error(`Token加密失败：${err.message}`);
+      }
+    }
+
+    /**
+     * 生成成员证书PDF
+     * @param {string} name - 成员姓名
+     */
+    function generateCertificate(name) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // 证书内容渲染
+      const now = new Date();
+      const certDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+      
+      // 标题
+      doc.setFontSize(20);
+      doc.setTextColor(0, 0, 0);
+      doc.text('成员认证证书', 85, 40, { align: 'center' });
+      
+      // 分隔线
+      doc.setLineWidth(0.5);
+      doc.line(40, 50, 170, 50);
+      
+      // 正文
+      doc.setFontSize(14);
+      doc.text(`兹证明 ${name} 同志，经64位Token认证通过，确认为正式成员。`, 25, 70);
+      
+      // 日期
+      doc.setFontSize(12);
+      doc.text(`认证日期：${certDate}`, 120, 100);
+      
+      // 落款
+      doc.text('认证单位：nuggetoj.top', 120, 120);
+      
+      // 保存PDF
+      doc.save(`${name}_成员认证证书_${certDate}.pdf`);
+    }
+
+    /**
+     * 核心认证逻辑
+     */
+    async function authMember() {
+      // 获取DOM元素
+      const name = document.getElementById('name').value.trim();
+      const rawToken = document.getElementById('token').value.trim();
+      const resultEl = document.getElementById('result');
+      const authBtn = document.getElementById('authBtn');
+
+      // 1. 禁用按钮，防止重复提交
+      authBtn.disabled = true;
+      resultEl.innerHTML = '';
+
+      // 2. 基础校验
+      if (!name) {
+        resultEl.innerHTML = '<span class="error">❌ 姓名不能为空！</span>';
+        authBtn.disabled = false;
+        return;
+      }
+      if (!rawToken) {
+        resultEl.innerHTML = '<span class="error">❌ 64位Token不能为空！</span>';
+        authBtn.disabled = false;
+        return;
+      }
+      if (rawToken.length !== 64) {
+        resultEl.innerHTML = '<span class="error">❌ Token必须为64位字符！</span>';
+        authBtn.disabled = false;
         return;
       }
 
       try {
-        // 加载JSON数据
-        const res = await fetch('members.json');
-        const members = await res.json();
-        // 匹配姓名+Token
-        const isMatch = members.some(m => m.name === name && m.token === token);
+        // 3. 加密用户输入的Token
+        const inputTokenHash = await sha256Encrypt(rawToken);
+
+        // 4. 从Supabase拉取正式成员数据
+        const { data: members, error } = await supabase
+          .from('official_members') // 正式成员表
+          .select('name, token_hash');
         
+        if (error) throw new Error(`加载成员数据失败：${error.message}`);
+        if (members.length === 0) throw new Error('暂无正式成员数据！');
+
+        // 5. 加密匹配（姓名+Token哈希）
+        const isMatch = members.some(m => {
+          return m.name === name && m.token_hash === inputTokenHash;
+        });
+
         if (isMatch) {
-          resultEl.innerHTML = '<span class="success">✅ 归属成功：该成员属于你的数据</span>';
+          // 6. 匹配成功，生成证书
+          resultEl.innerHTML = '<span class="success">✅ 认证成功！正在生成证书...</span>';
+          setTimeout(() => {
+            generateCertificate(name);
+            // 清空表单
+            document.getElementById('name').value = '';
+            document.getElementById('token').value = '';
+          }, 500);
         } else {
-          resultEl.innerHTML = '<span class="error">❌ 归属失败：姓名/Token错误，非你的数据</span>';
+          // 7. 匹配失败
+          resultEl.innerHTML = '<span class="error">❌ 认证失败：姓名或Token错误！</span>';
         }
+
       } catch (err) {
-        resultEl.innerHTML = '<span class="error">❌ 系统错误：' + err.message + '</span>';
+        // 异常处理
+        resultEl.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+        console.error("认证异常详情：", err);
+
+      } finally {
+        // 恢复按钮可用状态
+        authBtn.disabled = false;
       }
     }
+
+    // 绑定按钮点击事件（稳定不失效）
+    document.getElementById('authBtn').addEventListener('click', authMember);
+
+    // 禁用右键/审查元素（简单保密）
+    document.oncontextmenu = () => false;
+    document.onkeydown = (e) => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) return false;
+    };
   </script>
 </body>
 </html>
