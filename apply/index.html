@@ -8,6 +8,7 @@
     .input-group { margin: 1rem 0; }
     input, textarea { width: 100%; padding: 0.5rem; box-sizing: border-box; }
     button { width: 100%; padding: 0.8rem; background: #0078d4; color: white; border: none; cursor: pointer; }
+    button:disabled { background: #ccc; cursor: not-allowed; } /* 禁用状态样式 */
     #result { margin-top: 1rem; padding: 1rem; border: 1px solid #eee; }
     .success { color: green; }
     .error { color: red; }
@@ -17,66 +18,104 @@
   <h1>成员加入申请</h1>
   <div class="input-group">
     <label>姓名</label>
-    <input type="text" id="name" placeholder="请输入姓名" required>
+    <!-- 移除required属性，改用JS校验 -->
+    <input type="text" id="name" placeholder="请输入姓名">
   </div>
   <div class="input-group">
     <label>64位Token</label>
-    <input type="password" id="token" placeholder="请输入64位Token" required>
+    <!-- 移除required属性，改用JS校验 -->
+    <input type="password" id="token" placeholder="请输入64位Token">
   </div>
   <div class="input-group">
     <label>申请理由（选填）</label>
     <textarea id="reason" rows="3" placeholder="请输入申请理由"></textarea>
   </div>
-  <button onclick="submitApply()">提交申请</button>
+  <!-- 按钮增加id，用于控制禁用状态 -->
+  <button id="submitBtn" onclick="submitApply()">提交申请</button>
   <div id="result"></div>
 
   <!-- 引入Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
   <script>
     const supabaseUrl = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const supabaseKey = "sb_publishable_WF9Q30ENAtzuXCGDxg_UyA_bD_XOf2T";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8"; 
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // SHA-256加密函数（兼容所有浏览器）
     async function sha256Encrypt(rawStr) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(rawStr);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(rawStr);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {
+        throw new Error(`Token加密失败：${err.message}`);
+      }
     }
 
-    // 提交申请逻辑
+    // 提交申请逻辑（增加加载状态+完整异常捕获）
     async function submitApply() {
       const name = document.getElementById('name').value.trim();
       const token = document.getElementById('token').value.trim();
       const reason = document.getElementById('reason').value.trim();
       const resultEl = document.getElementById('result');
+      const submitBtn = document.getElementById('submitBtn');
 
-      // 校验
-      if (!name || !token) {
-        resultEl.innerHTML = '<span class="error">姓名和Token不能为空！</span>';
+      // 1. 禁用按钮，防止重复点击
+      submitBtn.disabled = true;
+      resultEl.innerHTML = '';
+
+      // 2. 手动校验（替代原生required）
+      if (!name) {
+        resultEl.innerHTML = '<span class="error">❌ 姓名不能为空！</span>';
+        submitBtn.disabled = false;
+        return;
+      }
+      if (!token) {
+        resultEl.innerHTML = '<span class="error">❌ 64位Token不能为空！</span>';
+        submitBtn.disabled = false;
         return;
       }
       if (token.length !== 64) {
-        resultEl.innerHTML = '<span class="error">Token必须为64位！</span>';
+        resultEl.innerHTML = '<span class="error">❌ Token必须为64位字符！</span>';
+        submitBtn.disabled = false;
         return;
       }
 
       try {
-        // 加密Token
+        // 3. 加密Token
         const tokenHash = await sha256Encrypt(token);
-        // 存入待审核表
+        
+        // 4. 存入Supabase待审核表
         const { data, error } = await supabase
-          .from('apply_requests')
-          .insert([{ name, token_hash: tokenHash, reason }]);
+          .from('apply_requests') // 确认表名和Supabase里的一致（小写）
+          .insert([{ 
+            name: name, 
+            token_hash: tokenHash, 
+            reason: reason,
+            status: 'pending' // 显式指定审核状态，避免表默认值失效
+          }]);
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(`Supabase存储失败：${error.message}（检查表名/字段名是否正确）`);
+        }
+
+        // 5. 提交成功
         resultEl.innerHTML = '<span class="success">✅ 申请提交成功！请等待管理员审核</span>';
         // 清空表单
         document.getElementById('name').value = '';
         document.getElementById('token').value = '';
         document.getElementById('reason').value = '';
+
       } catch (err) {
+        // 6. 捕获所有异常
         resultEl.innerHTML = `<span class="error">❌ 提交失败：${err.message}</span>`;
+        console.error('提交申请异常：', err); // 控制台打印详细错误，方便排查
+
+      } finally {
+        // 7. 恢复按钮可用状态
+        submitBtn.disabled = false;
       }
     }
   </script>
