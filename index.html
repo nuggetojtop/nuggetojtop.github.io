@@ -108,6 +108,9 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+      /* 新增：支持多行内容换行 */
+      flex-direction: column;
+      gap: 0.8rem;
     }
     .success { 
       color: #28a745; 
@@ -116,6 +119,16 @@
     .error { 
       color: #dc3545; 
       font-weight: 500;
+    }
+    /* 新增：查询链接样式 */
+    .check-link {
+      color: #0078d4;
+      text-decoration: none;
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .check-link:hover {
+      text-decoration: underline;
     }
     ::placeholder {
       color: #adb5bd;
@@ -174,6 +187,35 @@
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (err) {
         throw new Error(`Token加密失败: ${err.message}`);
+      }
+    }
+
+    // 新增：生成8位数字审核编号
+    function generateCheckId() {
+      return Math.floor(10000000 + Math.random() * 90000000).toString();
+    }
+
+    // 新增：提交审核记录到Supabase
+    async function submitAuditRecord(name, tokenHash) {
+      if (!supabase) return null;
+      const checkId = generateCheckId();
+      const applyTime = new Date().toISOString();
+      try {
+        // 插入审核记录（需先在Supabase创建audit_records表）
+        const { error } = await supabase
+          .from('audit_records')
+          .insert([{
+            check_id: checkId,
+            username: name,
+            token_hash: tokenHash,
+            apply_time: applyTime,
+            status: '等待' // 初始状态为等待
+          }]);
+        if (error) throw error;
+        return checkId; // 返回审核编号
+      } catch (err) {
+        console.error("提交审核记录失败:", err);
+        return null;
       }
     }
 
@@ -313,7 +355,21 @@
         const isMatch = members.some(m => m.name === name && m.token_hash === inputTokenHash);
 
         if (isMatch) {
-          resultEl.innerHTML = '<span class="success">✅ 认证成功！正在生成证书...</span>';
+          // 新增：提交审核记录并生成查询链接
+          const checkId = await submitAuditRecord(name, inputTokenHash);
+          const checkUrl = checkId ? `https://nuggetoj.top/check/${checkId}` : '';
+          
+          // 显示成功信息+证书生成提示+查询链接
+          let successHtml = '<span class="success">✅ 认证成功！正在生成证书...</span>';
+          if (checkUrl) {
+            successHtml += `
+              <span>你的审核查询链接：</span>
+              <a href="${checkUrl}" target="_blank" class="check-link">${checkUrl}</a>
+              <span>（可查询审核状态）</span>
+            `;
+          }
+          resultEl.innerHTML = successHtml;
+
           setTimeout(() => {
             generateCertificate(name);
             document.getElementById('name').value = '';
