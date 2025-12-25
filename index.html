@@ -202,7 +202,7 @@
       // Title
       doc.setFontSize(20);
       doc.setTextColor(0, 0, 0);
-      doc.text('Member Authentication Certificate', 85, 40, { align: 'center' });
+      doc.text('成员证明（第一代）', 85, 40, { align: 'center' });
       
       // Divider line
       doc.setLineWidth(0.5);
@@ -210,15 +210,16 @@
       
       // Main content
       doc.setFontSize(14);
-      doc.text(`This is to certify that Mr./Ms. ${name} has passed the 64-bit Token authentication`, 20, 70);
-      doc.text(`and is confirmed as an official member of the platform.`, 20, 85);
+      doc.text(`对于 ${name} 的成员认证通过，此证明。`, 20, 70);
+      doc.text(``, 20, 70);
+      doc.text(`保护好此证件。`, 20, 85);
       
       // Date
       doc.setFontSize(12);
-      doc.text(`Authentication Date: ${certDate}`, 120, 100);
+      doc.text(`签发日期: ${certDate}`, 120, 100);
       
       // Issuer
-      doc.text('Issued by: nuggetoj.top', 120, 120);
+      doc.text('来自: QMet Group', 120, 120);
 
       // ===== 核心修复：添加图片加载失败兜底 + 同步执行save =====
       const imageUrl = 'https://cdn.luogu.com.cn/upload/image_hosting/yqamjktp.png';
