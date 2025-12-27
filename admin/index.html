@@ -362,7 +362,7 @@
             ? await supabase
                 .from('official_members')
                 .update({ token_hash: auditRecord.token_hash })
-                .eq('name', prevMember.name)
+                .eq('name', auditRecord.username)
             : await supabase
                 .from('official_members')
                 .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
@@ -386,7 +386,7 @@
                 await supabase
                   .from('official_members')
                   .update({ token_hash: prevMember.token_hash })
-                  .eq('name', prevMember.name);
+                  .eq('name', auditRecord.username);
               } else {
                 await supabase.from('official_members').delete().eq('name', auditRecord.username);
               }
