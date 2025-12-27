@@ -345,7 +345,6 @@
         }
 
         let prevMember = null;
-        let insertedNewMember = false;
         let syncPerformed = false;
         const shouldSyncMember = status === '通过' && auditRecord?.username && auditRecord?.token_hash;
         if (shouldSyncMember) {
@@ -363,7 +362,7 @@
             ? await supabase
                 .from('official_members')
                 .update({ token_hash: auditRecord.token_hash })
-                .eq('name', prevMember.name || auditRecord.username)
+                .eq('name', prevMember.name)
             : await supabase
                 .from('official_members')
                 .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
@@ -371,7 +370,6 @@
           if (syncResult?.error) {
             throw new Error(`成员同步失败：${syncResult.error.message}`);
           }
-          insertedNewMember = !prevMember;
           syncPerformed = true;
         }
 
