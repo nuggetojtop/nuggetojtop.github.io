@@ -165,7 +165,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
-    const ADMIN_PASSWORD_HASH = "9846f0bbd5b39c4b25de63cbffb7d501ef109a1ee7946e4e4b8c89bcc0a89fb4";
+    const ADMIN_PASSWORD_HASH = "7b1db78da5504cbc2437141fd88ded2f7ef3ddaf4f0096e0d21893131d9d92ff";
     async function sha256(str) {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
