@@ -154,8 +154,8 @@
       <h2>没有审核编号？用用户名+Token查询</h2>
       <label for="queryName">用户名</label>
       <input id="queryName" class="query-input" type="text" placeholder="请输入申请时填写的用户名">
-      <label for="queryToken">64位Token</label>
-      <input id="queryToken" class="query-input" type="password" placeholder="请输入对应的64位Token（支持大小写16进制）">
+      <label for="queryToken">Token（至少8位）</label>
+      <input id="queryToken" class="query-input" type="password" placeholder="请输入对应的Token（至少8位）">
       <button id="queryByTokenBtn" class="query-btn">用户名+Token 查询</button>
     </div>
     <a href="../index.html" class="back-link">← 返回认证页面</a>
@@ -184,7 +184,7 @@
       // 兜底：未知状态
       '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
     };
-    const HEX_64_PATTERN = /^[0-9a-fA-F]{64}$/;
+    const MIN_TOKEN_LENGTH = 8;
 
     // 修复：获取URL参数函数（兼容空值/非8位编号）
     function getCheckId() {
@@ -293,11 +293,11 @@
         return;
       }
       if (!rawToken) {
-        auditInfoEl.innerHTML = '<div class="error">❌ 64位Token不能为空</div>';
+        auditInfoEl.innerHTML = '<div class="error">❌ Token不能为空</div>';
         return;
       }
-      if (!HEX_64_PATTERN.test(rawToken)) {
-        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位16进制字符串（0-9 和 A-F，大小写均可）</div>';
+      if (rawToken.length < MIN_TOKEN_LENGTH) {
+        auditInfoEl.innerHTML = `<div class="error">❌ Token长度至少为${MIN_TOKEN_LENGTH}位</div>`;
         return;
       }
       if (!supabase) {

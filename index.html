@@ -148,8 +148,8 @@
     </div>
     
     <div class="input-group">
-      <label>64位Token</label>
-      <input type="password" id="token" placeholder="请输入64位Token字符串">
+      <label>Token（至少8位）</label>
+      <input type="password" id="token" placeholder="请输入至少8位的Token字符串">
     </div>
     
     <div class="btn-group">
@@ -316,12 +316,12 @@
         return;
       }
       if (!rawToken) {
-        resultEl.innerHTML = '<span class="error">❌ 64位Token不能为空！</span>';
+        resultEl.innerHTML = '<span class="error">❌ Token不能为空！</span>';
         authBtn.disabled = false;
         return;
       }
-      if (rawToken.length !== 64) {
-        resultEl.innerHTML = '<span class="error">❌ Token必须为64位字符！</span>';
+      if (rawToken.length < 8) {
+        resultEl.innerHTML = '<span class="error">❌ Token长度至少为8位！</span>';
         authBtn.disabled = false;
         return;
       }

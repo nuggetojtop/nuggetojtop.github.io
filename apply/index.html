@@ -111,15 +111,15 @@
   <div class="container">
     <h1>提交认证申请</h1>
     
-    <!-- 核心表单：仅用户名+64位Token -->
+    <!-- 核心表单：仅用户名+Token（至少8位） -->
     <div class="input-group">
       <label>用户名</label>
       <input type="text" id="applyName" placeholder="请输入你的用户名">
     </div>
     
     <div class="input-group">
-      <label>64位Token</label>
-      <input type="password" id="applyToken" placeholder="请输入64位认证Token">
+      <label>Token（至少8位）</label>
+      <input type="password" id="applyToken" placeholder="请输入至少8位的认证Token">
     </div>
     
     <!-- 提交按钮 -->
@@ -182,12 +182,12 @@
         return;
       }
       if (!rawToken) {
-        resultEl.innerHTML = '<span class="error">❌ 64位Token不能为空！</span>';
+        resultEl.innerHTML = '<span class="error">❌ Token不能为空！</span>';
         submitBtn.disabled = false;
         return;
       }
-      if (rawToken.length !== 64) {
-        resultEl.innerHTML = '<span class="error">❌ Token必须是64位字符！</span>';
+      if (rawToken.length < 8) {
+        resultEl.innerHTML = '<span class="error">❌ Token长度至少为8位！</span>';
         submitBtn.disabled = false;
         return;
       }
