@@ -344,7 +344,18 @@
           throw new Error(recordError.message || '未找到该申请记录');
         }
 
+        let prevMember = null;
         if (status === '通过' && auditRecord?.username && auditRecord?.token_hash) {
+          const { data: prevMemberRows, error: prevFetchError } = await supabase
+            .from('official_members')
+            .select('name, token_hash')
+            .eq('name', auditRecord.username)
+            .limit(1);
+          if (prevFetchError) {
+            throw new Error(`读取成员信息失败：${prevFetchError.message}`);
+          }
+          prevMember = Array.isArray(prevMemberRows) && prevMemberRows.length > 0 ? prevMemberRows[0] : null;
+
           const { error: syncError } = await supabase
             .from('official_members')
             .upsert(
@@ -362,7 +373,17 @@
           .update({ status: status })
           .eq('check_id', checkId);
 
-        if (error) throw new Error(error.message);
+        if (error) {
+          if (status === '通过' && auditRecord?.username) {
+            // 尝试回滚成员同步
+            if (prevMember) {
+              await supabase.from('official_members').update({ token_hash: prevMember.token_hash }).eq('name', prevMember.name);
+            } else {
+              await supabase.from('official_members').delete().eq('name', auditRecord.username);
+            }
+          }
+          throw new Error(error.message);
+        }
 
         alert(`审核状态更新成功！编号${checkId} → ${status}`);
         loadApplyList();
