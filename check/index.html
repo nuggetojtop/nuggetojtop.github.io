@@ -280,7 +280,7 @@
     async function queryAuditStatusByToken() {
       const auditInfoEl = document.getElementById('auditInfo');
       const username = document.getElementById('queryName').value.trim();
-      const rawToken = document.getElementById('queryToken').value.trim().toLowerCase();
+      const rawToken = document.getElementById('queryToken').value.trim();
 
       if (!username) {
         auditInfoEl.innerHTML = '<div class="error">❌ 用户名不能为空</div>';
