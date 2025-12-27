@@ -352,25 +352,12 @@
         if (error) throw new Error(error.message);
 
         if (status === '通过' && auditRecord?.username && auditRecord?.token_hash) {
-          const { data: memberRows, error: memberFetchError } = await supabase
+          const { error: syncError } = await supabase
             .from('official_members')
-            .select('name')
-            .eq('name', auditRecord.username)
-            .limit(1);
-
-          if (memberFetchError) {
-            throw new Error(`读取成员信息失败：${memberFetchError.message}`);
-          }
-
-          const memberExists = Array.isArray(memberRows) && memberRows.length > 0;
-          const { error: syncError } = memberExists
-            ? await supabase
-                .from('official_members')
-                .update({ token_hash: auditRecord.token_hash })
-                .eq('name', auditRecord.username)
-            : await supabase
-                .from('official_members')
-                .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
+            .upsert(
+              [{ name: auditRecord.username, token_hash: auditRecord.token_hash }],
+              { onConflict: 'name' }
+            );
 
           if (syncError) {
             throw new Error(`成员同步失败：${syncError.message}`);

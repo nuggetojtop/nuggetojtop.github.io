@@ -175,7 +175,7 @@
       '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
       '通过': { class: 'status-approve', text: '审核通过', tip: '你可返回认证页面生成证书' },
       '拒绝': { class: 'status-reject', text: '审核拒绝', tip: '请确认Token正确或联系管理员' },
-      '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
+      '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' }, // 兼容历史记录中的“等待”状态
       // 兜底：未知状态
       '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
     };
@@ -290,8 +290,8 @@
         auditInfoEl.innerHTML = '<div class="error">❌ 64位Token不能为空</div>';
         return;
       }
-      if (rawToken.length !== 64) {
-        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位字符</div>';
+      if (!/^[0-9a-fA-F]{64}$/.test(rawToken)) {
+        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位16进制字符串</div>';
         return;
       }
       if (!supabase) {
