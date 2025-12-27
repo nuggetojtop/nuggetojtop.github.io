@@ -376,10 +376,14 @@
         if (error) {
           if (status === '通过' && auditRecord?.username) {
             // 尝试回滚成员同步
-            if (prevMember) {
-              await supabase.from('official_members').update({ token_hash: prevMember.token_hash }).eq('name', prevMember.name);
-            } else {
-              await supabase.from('official_members').delete().eq('name', auditRecord.username);
+            try {
+              if (prevMember) {
+                await supabase.from('official_members').update({ token_hash: prevMember.token_hash }).eq('name', prevMember.name);
+              } else {
+                await supabase.from('official_members').delete().eq('name', auditRecord.username);
+              }
+            } catch (rollbackErr) {
+              console.error("成员同步回滚失败", rollbackErr);
             }
           }
           throw new Error(error.message);
