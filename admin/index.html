@@ -347,7 +347,8 @@
         let prevMember = null;
         let insertedNewMember = false;
         let syncPerformed = false;
-        if (status === '通过' && auditRecord?.username && auditRecord?.token_hash) {
+        const shouldSyncMember = status === '通过' && auditRecord?.username && auditRecord?.token_hash;
+        if (shouldSyncMember) {
           const { data: prevMemberRows, error: prevFetchError } = await supabase
             .from('official_members')
             .select('name, token_hash')
@@ -358,24 +359,19 @@
           }
           prevMember = Array.isArray(prevMemberRows) && prevMemberRows.length > 0 ? prevMemberRows[0] : null;
 
-          let syncError = null;
-          if (prevMember) {
-            const { error } = await supabase
-              .from('official_members')
-              .update({ token_hash: auditRecord.token_hash })
-              .eq('name', auditRecord.username);
-            syncError = error;
-          } else {
-            const { error } = await supabase
-              .from('official_members')
-              .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
-            syncError = error;
-            insertedNewMember = true;
-          }
+          const syncResult = prevMember
+            ? await supabase
+                .from('official_members')
+                .update({ token_hash: auditRecord.token_hash })
+                .eq('name', auditRecord.username)
+            : await supabase
+                .from('official_members')
+                .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
 
-          if (syncError) {
-            throw new Error(`成员同步失败：${syncError.message}`);
+          if (syncResult?.error) {
+            throw new Error(`成员同步失败：${syncResult.error.message}`);
           }
+          insertedNewMember = !prevMember;
           syncPerformed = true;
         }
 
@@ -385,7 +381,7 @@
           .eq('check_id', checkId);
 
         if (error) {
-          if (status === '通过' && auditRecord?.username && syncPerformed) {
+          if (shouldSyncMember && syncPerformed) {
             // 尝试回滚成员同步
             try {
               if (prevMember) {
