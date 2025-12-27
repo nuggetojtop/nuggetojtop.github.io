@@ -346,6 +346,7 @@
 
         let prevMember = null;
         let insertedNewMember = false;
+        let syncPerformed = false;
         if (status === '通过' && auditRecord?.username && auditRecord?.token_hash) {
           const { data: prevMemberRows, error: prevFetchError } = await supabase
             .from('official_members')
@@ -357,19 +358,25 @@
           }
           prevMember = Array.isArray(prevMemberRows) && prevMemberRows.length > 0 ? prevMemberRows[0] : null;
 
-          const { error: syncError } = prevMember
-            ? await supabase
-                .from('official_members')
-                .update({ token_hash: auditRecord.token_hash })
-                .eq('name', auditRecord.username)
-            : await supabase
-                .from('official_members')
-                .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
+          let syncError = null;
+          if (prevMember) {
+            const { error } = await supabase
+              .from('official_members')
+              .update({ token_hash: auditRecord.token_hash })
+              .eq('name', auditRecord.username);
+            syncError = error;
+          } else {
+            const { error } = await supabase
+              .from('official_members')
+              .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
+            syncError = error;
+            insertedNewMember = true;
+          }
 
           if (syncError) {
             throw new Error(`成员同步失败：${syncError.message}`);
           }
-          insertedNewMember = !prevMember;
+          syncPerformed = true;
         }
 
         const { error } = await supabase
@@ -378,7 +385,7 @@
           .eq('check_id', checkId);
 
         if (error) {
-          if (status === '通过' && auditRecord?.username) {
+          if (status === '通过' && auditRecord?.username && syncPerformed) {
             // 尝试回滚成员同步
             try {
               if (prevMember) {
