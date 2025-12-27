@@ -348,7 +348,7 @@
         if (status === '通过' && auditRecord?.username && auditRecord?.token_hash) {
           const { data: prevMemberRows, error: prevFetchError } = await supabase
             .from('official_members')
-            .select('*')
+            .select('name, token_hash')
             .eq('name', auditRecord.username)
             .limit(1);
           if (prevFetchError) {
@@ -385,7 +385,7 @@
                 await supabase.from('official_members').delete().eq('name', auditRecord.username);
               }
             } catch (rollbackErr) {
-              console.error(`成员同步回滚失败（编号 ${checkId}）：`, rollbackErr);
+              console.error(`成员同步回滚失败（审核编号 ${checkId}，用户 ${auditRecord.username}）：可能需要人工核对 official_members`, rollbackErr);
             }
           }
           throw new Error(`${error.message}（状态未更新，成员同步已尝试回滚）`);

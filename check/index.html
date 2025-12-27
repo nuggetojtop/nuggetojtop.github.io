@@ -94,6 +94,11 @@
       font-size: 16px;
       margin-top: 2rem;
     }
+    .info {
+      color: #6c757d;
+      font-size: 16px;
+      margin-top: 2rem;
+    }
     .query-card {
       margin-top: 1.5rem;
       text-align: left;
@@ -175,7 +180,7 @@
       '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
       '通过': { class: 'status-approve', text: '审核通过', tip: '你可返回认证页面生成证书' },
       '拒绝': { class: 'status-reject', text: '审核拒绝', tip: '请确认Token正确或联系管理员' },
-      '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' }, // 兼容2024年前旧数据中的“等待”状态
+      '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' }, // 兼容旧数据中的“等待”状态（与“待审核”等价）
       // 兜底：未知状态
       '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
     };
@@ -292,7 +297,7 @@
         return;
       }
       if (!HEX_64_PATTERN.test(rawToken)) {
-        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位16进制字符串（仅限0-9、A-F、a-f）</div>';
+        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位16进制字符串（0-9 和 A-F，大小写均可）</div>';
         return;
       }
       if (!supabase) {
@@ -335,7 +340,7 @@
       if (initialCheckId) {
         queryAuditStatus();
       } else if (auditInfoEl) {
-        auditInfoEl.innerHTML = '<div class="loading">请输入审核编号或使用下方用户名+Token查询</div>';
+        auditInfoEl.innerHTML = '<div class="info">请输入审核编号或使用下方用户名+Token查询</div>';
       }
 
       // 绑定刷新按钮（确保按钮存在再绑定）
