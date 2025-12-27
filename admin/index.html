@@ -28,7 +28,6 @@
       text-align: center;
       font-size: 24px;
     }
-    /* 表格样式 - 适配管理员查看所有申请 */
     .apply-table {
       width: 100%;
       border-collapse: collapse;
@@ -47,7 +46,6 @@
     .apply-table tr:hover {
       background-color: #f8f9fa;
     }
-    /* 状态标签样式 */
     .status-tag {
       padding: 0.3rem 0.8rem;
       border-radius: 4px;
@@ -58,7 +56,6 @@
     .status-wait { background-color: #ffc107; }
     .status-approve { background-color: #28a745; }
     .status-reject { background-color: #dc3545; }
-    /* 操作按钮样式 */
     .action-btn {
       padding: 0.5rem 1rem;
       border: none;
@@ -89,7 +86,6 @@
     .refresh-btn:hover {
       background-color: #005a9e;
     }
-    /* 空数据/加载/错误提示 */
     .empty-tip, .loading-tip, .error-tip {
       text-align: center;
       padding: 2rem;
@@ -102,33 +98,141 @@
     .loading-tip {
       color: #0078d4;
     }
+    /* 登录弹窗样式 */
+    .login-mask {
+      position: fixed;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.18);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .login-modal {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+      padding: 2rem 2rem 1.2rem 2rem;
+      min-width: 320px;
+      text-align: center;
+    }
+    .login-modal h2 {
+      font-size: 20px; color: #212529;
+      margin-bottom: 1.2rem;
+    }
+    .login-modal input[type="password"] {
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 16px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      outline: none;
+      margin-bottom: 1rem;
+    }
+    .login-modal .login-btn {
+      background-color: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 500;
+      padding: 0.6rem 1.8rem;
+      cursor: pointer;
+      margin-bottom: 0.6rem;
+    }
+    .login-modal .login-btn:active {
+      background-color: #005a9e;
+    }
+    .login-modal .login-err {
+      color: #dc3545; font-size: 14px;
+      margin-bottom: 0.5rem; min-height: 20px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="adminLoginMask" class="login-mask" style="display:flex;">
+    <div class="login-modal">
+      <h2>管理员登录</h2>
+      <div class="login-err" id="adminLoginErr"></div>
+      <input type="password" id="adminPwdInput" placeholder="请输入管理员密码" autocomplete="current-password" />
+      <br />
+      <button class="login-btn" id="adminLoginBtn">登录</button>
+    </div>
+  </div>
+  <div class="container" id="adminContainer" style="display:none;">
     <h1>认证申请管理后台</h1>
-    <!-- 刷新申请列表按钮 -->
     <button class="refresh-btn" id="refreshListBtn">刷新申请列表</button>
-    <!-- 申请列表表格 -->
     <div id="applyListContainer" class="loading-tip">正在加载申请列表...</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
+    const ADMIN_PASSWORD_HASH = "9846f0bbd5b39c4b25de63cbffb7d501ef109a1ee7946e4e4b8c89bcc0a89fb4";
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // 登录判定，实现持久化
+    const LOGIN_FLAG_KEY = "qmet_admin_logged";
+    function setLoginFlag() {
+      sessionStorage.setItem(LOGIN_FLAG_KEY, 'ok');
+    }
+    function checkLoginFlag() {
+      return sessionStorage.getItem(LOGIN_FLAG_KEY) === 'ok';
+    }
+
+    // 登录流程
+    async function doAdminLogin() {
+      const errDiv = document.getElementById("adminLoginErr");
+      errDiv.textContent = "";
+      const pwdInput = document.getElementById("adminPwdInput");
+      const pwd = pwdInput.value.trim();
+      if (!pwd) {
+        errDiv.textContent = "请输入管理员密码";
+        return;
+      }
+      try {
+        const hash = await sha256(pwd);
+        if (hash === ADMIN_PASSWORD_HASH) {
+          setLoginFlag();
+          document.getElementById("adminLoginMask").style.display = "none";
+          document.getElementById("adminContainer").style.display = "";
+          pwdInput.value = "";
+          loadApplyList();
+        } else {
+          errDiv.textContent = "密码错误";
+        }
+      } catch {
+        errDiv.textContent = "验证出错，请重试";
+      }
+    }
+    // 回车快捷登录
+    document.getElementById("adminPwdInput").addEventListener("keydown", function(e){
+      if(e.key === "Enter"){doAdminLogin();}
+    });
+    // 登录按钮
+    document.getElementById("adminLoginBtn").addEventListener("click", doAdminLogin);
+
+    // 登录态初始化
+    window.addEventListener("DOMContentLoaded", function(){
+      if(checkLoginFlag()){
+        document.getElementById("adminLoginMask").style.display="none";
+        document.getElementById("adminContainer").style.display="";
+        loadApplyList();
+      }
+    });
+
     // Supabase配置（和用户端一致）
     const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wD[...]";
 
     let supabase;
     try {
-      // 初始化Supabase（管理员端同样需要）
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } catch (e) {
       document.getElementById('applyListContainer').innerHTML = '<div class="error-tip">❌ 系统初始化失败：' + e.message + '</div>';
       console.error("Supabase初始化失败:", e);
     }
 
-    // 格式化时间
     function formatTime(isoTime) {
       if (!isoTime) return '未知时间';
       return new Date(isoTime).toLocaleString('zh-CN', {
@@ -137,7 +241,6 @@
       });
     }
 
-    // 核心功能1：加载所有申请列表（解决admin不显示申请问题）
     async function loadApplyList() {
       const container = document.getElementById('applyListContainer');
       container.innerHTML = '<div class="loading-tip">正在加载申请列表...</div>';
@@ -148,21 +251,18 @@
       }
 
       try {
-        // 查询所有申请记录（按提交时间倒序）
         const { data, error } = await supabase
           .from('audit_records')
           .select('*')
-          .order('apply_time', { ascending: false }); // 最新提交的排在前面
+          .order('apply_time', { ascending: false });
 
         if (error) throw new Error(error.message);
 
-        // 无申请记录时的提示
         if (!data || data.length === 0) {
           container.innerHTML = '<div class="empty-tip">暂无认证申请记录</div>';
           return;
         }
 
-        // 渲染申请列表表格
         let tableHtml = `
           <table class="apply-table">
             <thead>
@@ -177,9 +277,7 @@
             <tbody>
         `;
 
-        // 遍历所有申请记录
         data.forEach(item => {
-          // 状态标签样式
           let statusClass = 'status-wait';
           let statusText = '待审核';
           if (item.status === '通过') {
@@ -190,7 +288,6 @@
             statusText = '审核拒绝';
           }
 
-          // 操作按钮（已审核的禁用操作）
           let actionBtns = '';
           if (item.status === '待审核') {
             actionBtns = `
@@ -201,7 +298,6 @@
             actionBtns = '<span style="color:#6c757d;font-size:12px;">已审核</span>';
           }
 
-          // 拼接行数据
           tableHtml += `
             <tr>
               <td>${item.check_id || '未知'}</td>
@@ -218,7 +314,6 @@
           </table>
         `;
 
-        // 渲染到页面
         container.innerHTML = tableHtml;
 
       } catch (err) {
@@ -227,7 +322,6 @@
       }
     }
 
-    // 核心功能2：更新审核状态（管理员操作）
     async function updateAuditStatus(checkId, status) {
       if (!confirm(`确认将编号${checkId}的申请设置为【${status}】吗？`)) {
         return;
@@ -247,7 +341,6 @@
         if (error) throw new Error(error.message);
 
         alert(`审核状态更新成功！编号${checkId} → ${status}`);
-        // 刷新列表
         loadApplyList();
 
       } catch (err) {
@@ -256,18 +349,11 @@
       }
     }
 
-    // 绑定事件：页面加载+刷新按钮
     document.addEventListener('DOMContentLoaded', function() {
-      // 页面加载时自动加载申请列表
-      loadApplyList();
-
-      // 绑定刷新列表按钮
       const refreshBtn = document.getElementById('refreshListBtn');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', loadApplyList);
       }
-
-      // 把更新状态函数挂载到window，方便表格内按钮调用
       window.updateAuditStatus = updateAuditStatus;
     });
   </script>
