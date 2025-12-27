@@ -94,6 +94,49 @@
       font-size: 16px;
       margin-top: 2rem;
     }
+    .query-card {
+      margin-top: 1.5rem;
+      text-align: left;
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid #e9ecef;
+    }
+    .query-card h2 {
+      font-size: 16px;
+      margin-bottom: 0.6rem;
+      color: #212529;
+    }
+    .query-card label {
+      display: block;
+      font-size: 13px;
+      color: #495057;
+      margin-top: 0.4rem;
+      margin-bottom: 0.3rem;
+    }
+    .query-input {
+      width: 100%;
+      padding: 0.7rem;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .query-btn {
+      margin-top: 0.8rem;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .query-btn:hover {
+      background-color: #1f8c3a;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body>
@@ -102,6 +145,14 @@
     <div id="auditInfo" class="loading">正在查询审核状态...</div>
     <!-- 修复按钮ID和样式绑定，确保可点击 -->
     <button id="refreshBtn">刷新审核状态</button>
+    <div class="query-card">
+      <h2>没有审核编号？用用户名+Token查询</h2>
+      <label for="queryName">用户名</label>
+      <input id="queryName" class="query-input" type="text" placeholder="请输入申请时填写的用户名">
+      <label for="queryToken">64位Token</label>
+      <input id="queryToken" class="query-input" type="password" placeholder="请输入对应的64位Token">
+      <button id="queryByTokenBtn" class="query-btn">用户名+Token 查询</button>
+    </div>
     <a href="../index.html" class="back-link">← 返回认证页面</a>
   </div>
 
@@ -119,6 +170,15 @@
       document.getElementById('auditInfo').innerHTML = '<div class="error">❌ 系统初始化失败</div>';
       console.error("Supabase初始化失败:", e);
     }
+
+    const statusConfig = {
+      '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
+      '通过': { class: 'status-approve', text: '审核通过', tip: '你可返回认证页面生成证书' },
+      '拒绝': { class: 'status-reject', text: '审核拒绝', tip: '请确认Token正确或联系管理员' },
+      '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
+      // 兜底：未知状态
+      '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
+    };
 
     // 修复：获取URL参数函数（兼容空值/非8位编号）
     function getCheckId() {
@@ -140,6 +200,33 @@
       });
     }
 
+    async function sha256Hash(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function renderAuditInfo(data) {
+      const auditInfoEl = document.getElementById('auditInfo');
+      const config = statusConfig[data.status] || statusConfig[''];
+      auditInfoEl.innerHTML = `
+        <div class="info-item">
+          <span class="info-label">用户名：</span>
+          <span>${data.username || '未知'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">提交时间：</span>
+          <span>${formatTime(data.apply_time)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">审核状态：</span>
+          <span class="status ${config.class}">${config.text}</span>
+        </div>
+        <div style="color:#6c757d;font-size:14px;margin-top:1rem;">${config.tip}</div>
+      `;
+    }
+
     // 核心修复：查询审核状态函数（增加兜底、错误处理）
     async function queryAuditStatus() {
       const auditInfoEl = document.getElementById('auditInfo');
@@ -150,7 +237,7 @@
       
       // 1. 检查8位编号是否有效
       if (!checkId) {
-        auditInfoEl.innerHTML = '<div class="error">❌ 无效的8位审核编号（URL参数错误）</div>';
+        auditInfoEl.innerHTML = '<div class="error">❌ 请输入有效的8位审核编号或使用下方查询方式</div>';
         return;
       }
 
@@ -181,32 +268,7 @@
           return;
         }
 
-        // 5. 状态映射（确保状态显示正常）
-        const statusConfig = {
-          '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
-          '通过': { class: 'status-approve', text: '审核通过', tip: '你可返回认证页面生成证书' },
-          '拒绝': { class: 'status-reject', text: '审核拒绝', tip: '请确认Token正确或联系管理员' },
-          // 兜底：未知状态
-          '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
-        };
-        const config = statusConfig[data.status] || statusConfig[''];
-
-        // 6. 渲染审核状态（确保所有字段都有兜底值）
-        auditInfoEl.innerHTML = `
-          <div class="info-item">
-            <span class="info-label">用户名：</span>
-            <span>${data.username || '未知'}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">提交时间：</span>
-            <span>${formatTime(data.apply_time)}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">审核状态：</span>
-            <span class="status ${config.class}">${config.text}</span>
-          </div>
-          <div style="color:#6c757d;font-size:14px;margin-top:1rem;">${config.tip}</div>
-        `;
+        renderAuditInfo(data);
 
       } catch (err) {
         // 7. 捕获所有异常，确保状态显示
@@ -215,17 +277,83 @@
       }
     }
 
+    async function queryAuditStatusByToken() {
+      const auditInfoEl = document.getElementById('auditInfo');
+      const username = document.getElementById('queryName').value.trim();
+      const rawToken = document.getElementById('queryToken').value.trim();
+
+      if (!username) {
+        auditInfoEl.innerHTML = '<div class="error">❌ 用户名不能为空</div>';
+        return;
+      }
+      if (!rawToken) {
+        auditInfoEl.innerHTML = '<div class="error">❌ 64位Token不能为空</div>';
+        return;
+      }
+      if (rawToken.length !== 64) {
+        auditInfoEl.innerHTML = '<div class="error">❌ Token必须为64位字符</div>';
+        return;
+      }
+      if (!supabase) {
+        auditInfoEl.innerHTML = '<div class="error">❌ 数据库连接失败，请刷新页面</div>';
+        return;
+      }
+
+      auditInfoEl.innerHTML = '<div class="loading">正在查询审核状态...</div>';
+
+      try {
+        const tokenHash = await sha256Hash(rawToken);
+        const { data, error } = await supabase
+          .from('audit_records')
+          .select('*')
+          .eq('username', username)
+          .eq('token_hash', tokenHash)
+          .order('apply_time', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data || data.length === 0) {
+          auditInfoEl.innerHTML = '<div class="error">❌ 未查询到该审核记录</div>';
+          return;
+        }
+
+        renderAuditInfo(data[0]);
+      } catch (err) {
+        auditInfoEl.innerHTML = `<div class="error">❌ 查询失败：${err.message}</div>`;
+        console.error("用户名+Token 查询错误:", err);
+      }
+    }
+
     // 修复：页面加载+按钮点击事件绑定（确保执行）
     document.addEventListener('DOMContentLoaded', function() {
-      // 页面加载时立即查询
-      queryAuditStatus();
+      const auditInfoEl = document.getElementById('auditInfo');
+      const initialCheckId = getCheckId();
+      if (initialCheckId) {
+        queryAuditStatus();
+      } else if (auditInfoEl) {
+        auditInfoEl.innerHTML = '<div class="loading">请输入审核编号或使用下方用户名+Token查询</div>';
+      }
 
       // 绑定刷新按钮（确保按钮存在再绑定）
       const refreshBtn = document.getElementById('refreshBtn');
       if (refreshBtn) {
-        refreshBtn.addEventListener('click', queryAuditStatus);
+        refreshBtn.addEventListener('click', function() {
+          if (getCheckId()) {
+            queryAuditStatus();
+          } else if (auditInfoEl) {
+            auditInfoEl.innerHTML = '<div class="error">❌ 暂无审核编号，请使用下方用户名+Token查询</div>';
+          }
+        });
       } else {
         console.error("刷新按钮未找到");
+      }
+
+      const queryBtn = document.getElementById('queryByTokenBtn');
+      if (queryBtn) {
+        queryBtn.addEventListener('click', queryAuditStatusByToken);
       }
     });
   </script>
