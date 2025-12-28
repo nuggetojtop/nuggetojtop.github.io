@@ -25,8 +25,19 @@
       return;
     }
 
+    const isFontAvailable = (fontList) => {
+      if (!fontList) return false;
+      const lowerName = CHINESE_FONT_NAME.toLowerCase();
+      return Boolean(
+        fontList[CHINESE_FONT_NAME] ||
+        (fontList.fonts && fontList.fonts[CHINESE_FONT_NAME]) ||
+        fontList[lowerName] ||
+        (fontList.fonts && fontList.fonts[lowerName])
+      );
+    };
+
     const initialFonts = doc.getFontList ? doc.getFontList() : null;
-    if (initialFonts && initialFonts[CHINESE_FONT_NAME]) {
+    if (isFontAvailable(initialFonts)) {
       doc.setFont(CHINESE_FONT_NAME, "normal");
       return;
     }
@@ -49,7 +60,7 @@
     try {
       await chineseFontPromise;
       const currentFonts = doc.getFontList ? doc.getFontList() : null;
-      if (!currentFonts || !currentFonts[CHINESE_FONT_NAME]) {
+      if (!isFontAvailable(currentFonts)) {
         if (chineseFontBase64) {
           doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
           doc.addFont(CHINESE_FONT_FILE, CHINESE_FONT_NAME, "normal");
