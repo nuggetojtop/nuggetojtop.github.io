@@ -375,7 +375,9 @@
 
         if (isMatch) {
           const checkId = await submitAuditRecord(name, inputTokenHash);
-          const checkUrl = checkId ? `https://nuggetoj.top/join/check/index.html?checkId=${checkId}` : '';
+          const checkUrl = checkId 
+            ? new URL(`check/index.html?checkId=${checkId}`, window.location.href).toString()
+            : '';
           
           let successHtml = '<span class="success">✅ 认证成功！正在生成证书...</span>';
           if (checkUrl) {
