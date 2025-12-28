@@ -12,12 +12,12 @@
     const bytes = new Uint8Array(buffer);
     const chunks = [];
     for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
-      let chunkStr = "";
+      const chars = [];
       const end = Math.min(i + BASE64_CHUNK_SIZE, bytes.length);
       for (let j = i; j < end; j++) {
-        chunkStr += String.fromCharCode(bytes[j]);
+        chars.push(String.fromCharCode(bytes[j]));
       }
-      chunks.push(chunkStr);
+      chunks.push(chars.join(''));
     }
     return btoa(chunks.join(''));
   }
@@ -58,6 +58,9 @@
       })().catch(err => {
         if (chineseFontAttempts < MAX_FONT_RETRY) {
           chineseFontPromise = null; // allow retry on next invocation while under retry limit
+        } else {
+          chineseFontAttempts = 0; // reset counter after hitting retry cap to allow future attempts
+          chineseFontPromise = null;
         }
         console.error("字体下载失败，将在下次调用时重试 / Font download failed, will retry on next attempt.", err);
         throw err;
