@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>成员Token认证</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+    body { 
+      max-width: 420px; 
+      margin: 2rem auto; 
+      padding: 0 1rem; 
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      background-color: #f8f9fa;
+    }
+    .container {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .group-title {
+      text-align: center;
+      font-size: 18px;
+      color: #495057;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 1.5rem;
+      font-size: 22px;
+    }
+    .input-group { 
+      margin: 1.2rem 0; 
+    }
+    label { 
+      display: block; 
+      margin-bottom: 0.5rem; 
+      font-weight: 500;
+      color: #495057;
+      font-size: 14px;
+    }
+    input { 
+      width: 100%; 
+      padding: 0.8rem; 
+      box-sizing: border-box; 
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: #fafafa;
+      outline: none;
+    }
+    input:focus {
+      border-color: #0078d4;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+    }
+    button { 
+      flex: 1;
+      padding: 0.9rem; 
+      border: none; 
+      border-radius: 8px;
+      cursor: pointer; 
+      font-size: 15px;
+      font-weight: 500;
+    }
+    #applyBtn {
+      background: #e9ecef;
+      color: #495057;
+    }
+    #applyBtn:hover {
+      background: #dee2e6;
+      transform: translateY(-2px);
+    }
+    #checkBtn {
+      background: #f1f3f5;
+      color: #495057;
+    }
+    #checkBtn:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
+    #authBtn {
+      background: #0078d4; 
+      color: white; 
+    }
+    #authBtn:hover { 
+      background: #005a9e; 
+      transform: translateY(-2px);
+    }
+    button:disabled { 
+      background: #ced4da; 
+      cursor: not-allowed; 
+      transform: none !important;
+    }
+    #result { 
+      margin-top: 1.2rem; 
+      padding: 1rem; 
+      border-radius: 8px;
+      border: 1px solid #e9ecef; 
+      background-color: #fafafa;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .success { 
+      color: #28a745; 
+      font-weight: 500;
+    }
+    .error { 
+      color: #dc3545; 
+      font-weight: 500;
+    }
+    .check-link {
+      color: #0078d4;
+      text-decoration: none;
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .check-link:hover {
+      text-decoration: underline;
+    }
+    ::placeholder {
+      color: #adb5bd;
+      font-size: 13px;
+    }
+    .container:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="group-title">Here is QMet Group!(ver 26.0.0)</div>
+    <h1>成员Token认证</h1>
+    
+    <div class="input-group">
+      <label>姓名</label>
+      <input type="text" id="name" placeholder="请输入你的姓名">
+    </div>
+    
+    <div class="input-group">
+      <label>Token（至少8位）</label>
+      <input type="password" id="token" placeholder="请输入至少8位的Token字符串">
+    </div>
+    
+    <div class="btn-group">
+      <button id="applyBtn">申请加入</button>
+      <button id="checkBtn">查询审核状态</button>
+      <button id="authBtn">验证并生成证书</button>
+    </div>
+    
+    <div id="result"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="./font-loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  
+  <script>
+    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
+
+    let supabase;
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      console.log("Supabase初始化完成");
+    } catch (e) {
+      console.error("Supabase初始化失败:", e);
+      alert("系统初始化失败，请刷新页面重试");
+    }
+
+    async function sha256Encrypt(rawStr) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(rawStr);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {
+        throw new Error(`Token加密失败: ${err.message}`);
+      }
+    }
+
+    // 生成8位数字审核编号
+    function generateCheckId() {
+      return Math.floor(10000000 + Math.random() * 90000000).toString();
+    }
+
+    async function findLatestAuditRecord(name, tokenHash) {
+      const { data, error } = await supabase
+        .from('audit_records')
+        .select('check_id, status, apply_time')
+        .eq('username', name)
+        .eq('token_hash', tokenHash)
+        .order('apply_time', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        throw error;
+      }
+      return data && data.length ? data[0] : null;
+    }
+
+    // 提交审核记录到Supabase
+    async function submitAuditRecord(name, tokenHash) {
+      if (!supabase) return null;
+      const applyTime = new Date().toISOString();
+      try {
+        const latest = await findLatestAuditRecord(name, tokenHash);
+        if (latest && latest.status !== '拒绝') {
+          return latest.check_id;
+        }
+
+        const checkId = generateCheckId();
+        const { error } = await supabase
+          .from('audit_records')
+          .insert([{
+            check_id: checkId,
+            username: name,
+            token_hash: tokenHash,
+            apply_time: applyTime,
+            status: '待审核'
+          }]);
+        if (error) throw error;
+        return checkId;
+      } catch (err) {
+        console.error("提交审核记录失败:", err);
+        return null;
+      }
+    }
+
+    async function generateCertificate(name) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      await ensureChineseFont(doc);
+      try {
+        doc.setFont("NotoSansSC", "normal");
+      } catch (err) {
+        console.warn("中文字体设置失败，改用默认字体", err);
+      }
+
+      const originalImgUrl = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo.png?t=" + new Date().getTime();
+      const TRANSPARENT_PNG_URL = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo2.png?t=" + new Date().getTime();
+
+      const now = new Date();
+      const certDate = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+      
+      doc.setFontSize(20);
+      doc.text('Member Certificate (V1)', 105, 40, { align: 'center' });
+      doc.setLineWidth(0.5);
+      doc.line(40, 50, 170, 50);
+      doc.setFontSize(14);
+      doc.text(`Certification for: ${name}`, 105, 70, { align: 'center' });
+      doc.text(`Valid member of QMet Group`, 105, 85, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(`Issue Date: ${certDate}`, 120, 100);
+      doc.text(`Issued by: QMet Group`, 120, 120);
+
+      const img1 = new Image();
+      img1.crossOrigin = 'anonymous';
+      img1.src = originalImgUrl;
+
+      const img2 = new Image();
+      img2.crossOrigin = 'anonymous';
+      img2.src = TRANSPARENT_PNG_URL;
+
+      const waitForImages = () => {
+        return new Promise((resolve) => {
+          let loaded = 0;
+          const checkLoaded = () => {
+            loaded++;
+            if (loaded === 2) resolve();
+          };
+
+          img1.onload = checkLoaded;
+          img1.onerror = () => {
+            console.warn("原有图片加载失败，URL：", originalImgUrl);
+            checkLoaded();
+          };
+
+          img2.onload = checkLoaded;
+          img2.onerror = () => {
+            console.warn("透明PNG加载失败，URL：", TRANSPARENT_PNG_URL);
+            checkLoaded();
+          };
+
+          setTimeout(resolve, 5000);
+        });
+      };
+
+      await waitForImages();
+      if (img1.complete) {
+        doc.addImage(img1, 'PNG', (210 - 120)/2, 140, 120, 0);
+        console.log("原有图片绘制成功");
+      } else {
+        doc.setDrawColor(255, 0, 0);
+        doc.rect((210 - 120)/2, 140, 120, 60);
+        console.error("原有图片加载失败，请检查URL");
+      }
+
+      if (img2.complete) {
+        doc.addImage(img2, 'PNG', 100, 110, 60, 0);
+        console.log("透明PNG绘制成功");
+      } else {
+        doc.setDrawColor(0, 255, 0);
+        doc.rect(100, 110, 60, 30);
+        console.error("透明PNG加载失败，请检查：", TRANSPARENT_PNG_URL);
+      }
+
+      doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+    }
+
+    async function authMember() {
+      if (!supabase) {
+        document.getElementById('result').innerHTML = '<span class="error">❌ 系统初始化失败，请刷新页面！</span>';
+        return;
+      }
+
+      const name = document.getElementById('name').value.trim();
+      const rawToken = document.getElementById('token').value.trim();
+      const resultEl = document.getElementById('result');
+      const authBtn = document.getElementById('authBtn');
+
+      authBtn.disabled = true;
+      resultEl.innerHTML = '';
+
+      if (!name) {
+        resultEl.innerHTML = '<span class="error">❌ 姓名不能为空！</span>';
+        authBtn.disabled = false;
+        return;
+      }
+      if (!rawToken) {
+        resultEl.innerHTML = '<span class="error">❌ Token不能为空！</span>';
+        authBtn.disabled = false;
+        return;
+      }
+      if (rawToken.length < 8) {
+        resultEl.innerHTML = '<span class="error">❌ Token长度至少为8位！</span>';
+        authBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const inputTokenHash = await sha256Encrypt(rawToken);
+        const { data: members, error } = await supabase
+          .from('official_members')
+          .select('name, token_hash');
+        
+        if (error) throw new Error(`加载成员数据失败: ${error.message}`);
+        if (members.length === 0) throw new Error('暂无正式成员数据！');
+
+        const isMatch = members.some(m => m.name === name && m.token_hash === inputTokenHash);
+
+        if (isMatch) {
+          const checkId = await submitAuditRecord(name, inputTokenHash);
+          const checkUrl = checkId ? `https://nuggetoj.top/join/check/index.html?checkId=${checkId}` : '';
+          
+          let successHtml = '<span class="success">✅ 认证成功！正在生成证书...</span>';
+          if (checkUrl) {
+            successHtml += `
+              <span>你的审核查询链接：</span>
+              <a href="${checkUrl}" target="_blank" class="check-link">${checkUrl}</a>
+              <span>（可查询审核状态）</span>
+            `;
+          }
+          resultEl.innerHTML = successHtml;
+
+          setTimeout(() => {
+            generateCertificate(name).then(() => {
+              document.getElementById('name').value = '';
+              document.getElementById('token').value = '';
+            }).catch(err => {
+              console.error("生成证书失败:", err);
+              showErrorMessage(resultEl, '❌ 证书生成失败，请稍后重试');
+            });
+          }, 300);
+        } else {
+          resultEl.innerHTML = '<span class="error">❌ 认证失败：姓名或Token错误！</span>';
+        }
+
+      } catch (err) {
+        resultEl.innerHTML = `<span class="error">❌ 操作失败：${err.message}</span>`;
+        console.error("认证错误:", err);
+      } finally {
+        authBtn.disabled = false;
+      }
+    }
+
+    function goToApplyPage() {
+      window.location.href = 'apply/index.html';
+    }
+
+    function goToCheckPage() {
+      window.location.href = 'check/index.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const authBtn = document.getElementById('authBtn');
+      if (authBtn) {
+        authBtn.addEventListener('click', authMember);
+        console.log("验证按钮事件绑定成功");
+      } else {
+        console.error("未找到验证按钮DOM元素");
+      }
+
+      const applyBtn = document.getElementById('applyBtn');
+      if (applyBtn) {
+        applyBtn.addEventListener('click', goToApplyPage);
+        console.log("申请按钮事件绑定成功");
+      } else {
+        console.error("未找到申请按钮DOM元素");
+      }
+
+      const checkBtn = document.getElementById('checkBtn');
+      if (checkBtn) {
+        checkBtn.addEventListener('click', goToCheckPage);
+        console.log("查询按钮事件绑定成功");
+      } else {
+        console.error("未找到查询按钮DOM元素");
+      }
+    });
+
+    document.oncontextmenu = () => false;
+    document.onkeydown = (e) => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    };
+  </script>
+</body>
+</html>
