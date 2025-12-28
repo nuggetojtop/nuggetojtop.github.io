@@ -376,7 +376,7 @@
         if (isMatch) {
           const checkId = await submitAuditRecord(name, inputTokenHash);
           const checkUrl = checkId 
-            ? new URL(`check/index.html?checkId=${checkId}`, window.location.href).toString()
+            ? `${window.location.origin}/join/check/index.html?checkId=${checkId}`
             : '';
           
           let successHtml = '<span class="success">✅ 认证成功！正在生成证书...</span>';
