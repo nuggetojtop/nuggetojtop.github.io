@@ -226,6 +226,11 @@
       });
 
       await ensureChineseFont(doc);
+      try {
+        doc.setFont("NotoSansSC", "normal");
+      } catch (err) {
+        console.warn("中文字体设置失败，使用默认字体", err);
+      }
 
       const originalImgUrl = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo.png?t=" + new Date().getTime();
       const TRANSPARENT_PNG_URL = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo2.png?t=" + new Date().getTime();

@@ -1,7 +1,7 @@
 (function() {
-  const CHINESE_FONT_NAME = "WenKaiLite";
-  const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
-  const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
+  const CHINESE_FONT_NAME = "NotoSansSC";
+  const CHINESE_FONT_FILE = "NotoSansSC-Regular.ttf";
+  const CHINESE_FONT_URL = "/join/fonts/NotoSansSC-Regular.ttf";
   const BASE64_CHUNK_SIZE = 32768; // 32KB chunks to avoid call stack limits during base64 conversion
   const MAX_FONT_RETRY = 3;
   let chineseFontPromise = null;
