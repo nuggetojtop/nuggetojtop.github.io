@@ -363,12 +363,12 @@
           resultEl.innerHTML = successHtml;
 
           setTimeout(() => {
-            generateCertificate(name).catch(err => {
-              console.error("生成证书失败:", err);
-              showErrorMessage(resultEl, '❌ 证书生成失败，请稍后重试');
-            }).finally(() => {
+            generateCertificate(name).then(() => {
               document.getElementById('name').value = '';
               document.getElementById('token').value = '';
+            }).catch(err => {
+              console.error("生成证书失败:", err);
+              showErrorMessage(resultEl, '❌ 证书生成失败，请稍后重试');
             });
           }, 300);
         } else {

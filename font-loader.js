@@ -76,6 +76,7 @@
         }
       }
       doc.setFont(CHINESE_FONT_NAME, "normal");
+      chineseFontAttempts = 0;
     } catch (err) {
       console.warn("中文字体加载失败，已回退为默认字体 / Font load failed, fallback to default.", err);
       doc.setFont("helvetica", "normal");
@@ -90,7 +91,10 @@
     if (append) {
       targetEl.appendChild(errorNode);
     } else {
-      targetEl.replaceChildren(errorNode);
+      while (targetEl.firstChild) {
+        targetEl.removeChild(targetEl.firstChild);
+      }
+      targetEl.appendChild(errorNode);
     }
   }
 
