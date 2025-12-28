@@ -3,8 +3,10 @@
   const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
   const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
   const BASE64_CHUNK_SIZE = 32768; // 32KB chunks to avoid call stack limits during base64 conversion
+  const MAX_FONT_RETRY = 3;
   let chineseFontPromise = null;
   let chineseFontBase64 = "";
+  let chineseFontAttempts = 0;
 
   function bufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
@@ -22,6 +24,7 @@
 
   async function ensureChineseFont(doc) {
     if (!doc || !doc.getFontList || !doc.addFileToVFS || !doc.addFont || !doc.setFont) {
+      console.warn("缺少必要的 jsPDF 字体方法，已跳过字体加载 / Missing required jsPDF font APIs, font load skipped.");
       return;
     }
 
@@ -44,6 +47,7 @@
 
     if (!chineseFontPromise) {
       chineseFontPromise = (async () => {
+        chineseFontAttempts++;
         const res = await fetch(CHINESE_FONT_URL);
         if (!res.ok) {
           throw new Error(`字体下载失败 / Font download failed (status ${res.status})`);
@@ -52,7 +56,10 @@
         chineseFontBase64 = bufferToBase64(buffer);
         return chineseFontBase64;
       })().catch(err => {
-        chineseFontPromise = null;
+        if (chineseFontAttempts < MAX_FONT_RETRY) {
+          chineseFontPromise = null; // allow retry on next invocation while under retry limit
+        }
+        console.error("字体下载失败，将在下次调用时重试 / Font download failed, will retry on next attempt.", err);
         throw err;
       });
     }
@@ -83,8 +90,7 @@
     if (append) {
       targetEl.appendChild(errorNode);
     } else {
-      targetEl.innerHTML = '';
-      targetEl.appendChild(errorNode);
+      targetEl.replaceChildren(errorNode);
     }
   }
 
