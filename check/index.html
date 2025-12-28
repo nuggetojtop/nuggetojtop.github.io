@@ -307,7 +307,13 @@
         await generateCertificate(username);
       } catch (err) {
         console.error("证书生成失败:", err);
-        alert("证书生成失败，请稍后重试");
+        const auditInfoEl = document.getElementById('auditInfo');
+        if (auditInfoEl) {
+          const errorNode = document.createElement('div');
+          errorNode.className = 'error';
+          errorNode.textContent = '❌ 证书生成失败，请稍后重试';
+          auditInfoEl.appendChild(errorNode);
+        }
       }
     }
 
