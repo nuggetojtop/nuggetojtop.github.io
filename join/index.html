@@ -441,14 +441,6 @@
         console.error("未找到查询按钮DOM元素");
       }
     });
-
-    document.oncontextmenu = () => false;
-    document.onkeydown = (e) => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
-        return false;
-      }
-    };
   </script>
 </body>
 </html>

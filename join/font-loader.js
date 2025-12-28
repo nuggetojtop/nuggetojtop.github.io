@@ -56,13 +56,18 @@
         chineseFontBase64 = bufferToBase64(buffer);
         return chineseFontBase64;
       })().catch(err => {
-        if (chineseFontAttempts < MAX_FONT_RETRY) {
+        const willRetry = chineseFontAttempts < MAX_FONT_RETRY;
+        if (willRetry) {
           chineseFontPromise = null; // allow retry on next invocation while under retry limit
         } else {
-          chineseFontAttempts = 0; // reset counter after hitting retry cap to allow future attempts
-          chineseFontPromise = null;
+          chineseFontPromise = Promise.reject(err);
         }
-        console.error("字体下载失败，将在下次调用时重试 / Font download failed, will retry on next attempt.", err);
+        console.error(
+          willRetry 
+            ? "字体下载失败，将在下次调用时重试 / Font download failed, will retry on next attempt."
+            : "字体下载失败，已达最大重试次数，将使用回退字体 / Font download failed and max retries reached, falling back.",
+          err
+        );
         throw err;
       });
     }
