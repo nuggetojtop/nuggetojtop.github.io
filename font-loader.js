@@ -2,7 +2,7 @@
   const CHINESE_FONT_NAME = "WenKaiLite";
   const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
   const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
-  const CHUNK_SIZE = 0x8000;
+  const CHUNK_SIZE = 0x8000; // process in 32KB chunks to avoid call stack limits during base64 conversion
   let chineseFontPromise = null;
   let chineseFontBase64 = "";
 
@@ -64,5 +64,19 @@
     }
   }
 
+  function showErrorMessage(targetEl, message, append = false) {
+    if (!targetEl) return;
+    const errorNode = document.createElement('div');
+    errorNode.className = 'error';
+    errorNode.textContent = message;
+    if (append) {
+      targetEl.appendChild(errorNode);
+    } else {
+      targetEl.innerHTML = '';
+      targetEl.appendChild(errorNode);
+    }
+  }
+
   window.ensureChineseFont = ensureChineseFont;
+  window.showErrorMessage = showErrorMessage;
 })();
