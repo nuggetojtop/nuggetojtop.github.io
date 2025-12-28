@@ -78,6 +78,25 @@
     #refreshBtn:active {
       transform: translateY(0);
     }
+    #downloadCertBtn {
+      margin-top: 0.8rem;
+      padding: 0.7rem 1.5rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+    }
+    #downloadCertBtn:hover {
+      background-color: #1f8c3a;
+      transform: translateY(-2px);
+    }
+    #downloadCertBtn:active {
+      transform: translateY(0);
+    }
     .back-link {
       display: inline-block;
       margin-top: 1.5rem;
@@ -150,6 +169,7 @@
     <div id="auditInfo" class="loading">正在查询审核状态...</div>
     <!-- 修复按钮ID和样式绑定，确保可点击 -->
     <button id="refreshBtn">刷新审核状态</button>
+    <button id="downloadCertBtn">下载证书</button>
     <div class="query-card">
       <h2>没有审核编号？用用户名+Token查询</h2>
       <label for="queryName">用户名</label>
@@ -161,6 +181,7 @@
     <a href="../index.html" class="back-link">← 返回认证页面</a>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
     // Supabase配置
@@ -175,16 +196,113 @@
       document.getElementById('auditInfo').innerHTML = '<div class="error">❌ 系统初始化失败</div>';
       console.error("Supabase初始化失败:", e);
     }
+    let latestAuditRecord = null;
 
     const statusConfig = {
       '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
-      '通过': { class: 'status-approve', text: '审核通过', tip: '你可返回认证页面生成证书' },
+      '通过': { class: 'status-approve', text: '审核通过', tip: '审核通过，可直接下载证书' },
+      '审核通过': { class: 'status-approve', text: '审核通过', tip: '审核通过，可直接下载证书' },
       '拒绝': { class: 'status-reject', text: '审核拒绝', tip: '请确认Token正确或联系管理员' },
       '等待': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' }, // 兼容旧数据中的“等待”状态（与“待审核”等价）
       // 兜底：未知状态
       '': { class: 'status-wait', text: '状态未知', tip: '请联系管理员确认' }
     };
     const MIN_TOKEN_LENGTH = 8;
+
+    function toggleDownloadButton(isApproved) {
+      const downloadBtn = document.getElementById('downloadCertBtn');
+      if (!downloadBtn) return;
+      downloadBtn.style.display = isApproved ? 'inline-block' : 'none';
+      downloadBtn.disabled = !isApproved;
+    }
+
+    function generateCertificate(name) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const originalImgUrl = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo.png?t=" + new Date().getTime();
+      const TRANSPARENT_PNG_URL = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo2.png?t=" + new Date().getTime();
+
+      const now = new Date();
+      const certDate = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+      
+      doc.setFontSize(20);
+      doc.text('Member Certificate (V1)', 105, 40, { align: 'center' });
+      doc.setLineWidth(0.5);
+      doc.line(40, 50, 170, 50);
+      doc.setFontSize(14);
+      doc.text(`Certification for: ${name}`, 105, 70, { align: 'center' });
+      doc.text(`Valid member of QMet Group`, 105, 85, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(`Issue Date: ${certDate}`, 120, 100);
+      doc.text(`Issued by: QMet Group`, 120, 120);
+
+      const img1 = new Image();
+      img1.crossOrigin = 'anonymous';
+      img1.src = originalImgUrl;
+
+      const img2 = new Image();
+      img2.crossOrigin = 'anonymous';
+      img2.src = TRANSPARENT_PNG_URL;
+
+      const waitForImages = () => {
+        return new Promise((resolve) => {
+          let loaded = 0;
+          const checkLoaded = () => {
+            loaded++;
+            if (loaded === 2) resolve();
+          };
+
+          img1.onload = checkLoaded;
+          img1.onerror = () => {
+            console.warn("原有图片加载失败，URL：", originalImgUrl);
+            checkLoaded();
+          };
+
+          img2.onload = checkLoaded;
+          img2.onerror = () => {
+            console.warn("透明PNG加载失败，URL：", TRANSPARENT_PNG_URL);
+            checkLoaded();
+          };
+
+          setTimeout(resolve, 5000);
+        });
+      };
+
+      waitForImages().then(() => {
+        if (img1.complete) {
+          doc.addImage(img1, 'PNG', (210 - 120)/2, 140, 120, 0);
+          console.log("原有图片绘制成功");
+        } else {
+          doc.setDrawColor(255, 0, 0);
+          doc.rect((210 - 120)/2, 140, 120, 60);
+          console.error("原有图片加载失败，请检查URL");
+        }
+
+        if (img2.complete) {
+          doc.addImage(img2, 'PNG', 100, 110, 60, 0);
+          console.log("透明PNG绘制成功");
+        } else {
+          doc.setDrawColor(0, 255, 0);
+          doc.rect(100, 110, 60, 30);
+          console.error("透明PNG加载失败，请检查：", TRANSPARENT_PNG_URL);
+        }
+
+        doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+      });
+    }
+
+    function downloadCertificate() {
+      if (!latestAuditRecord) return;
+      const config = statusConfig[latestAuditRecord.status] || statusConfig[''];
+      if (config.class !== 'status-approve') return;
+      const username = latestAuditRecord.username || 'Member';
+      generateCertificate(username);
+    }
 
     // 修复：获取URL参数函数（兼容空值/非8位编号）
     function getCheckId() {
@@ -216,6 +334,9 @@
     function renderAuditInfo(data) {
       const auditInfoEl = document.getElementById('auditInfo');
       const config = statusConfig[data.status] || statusConfig[''];
+      latestAuditRecord = data;
+      const isApproved = config.class === 'status-approve';
+      toggleDownloadButton(isApproved);
       auditInfoEl.innerHTML = `
         <div class="info-item">
           <span class="info-label">用户名：</span>
@@ -238,6 +359,8 @@
       const auditInfoEl = document.getElementById('auditInfo');
       // 重置为加载状态
       auditInfoEl.innerHTML = '<div class="loading">正在查询审核状态...</div>';
+      latestAuditRecord = null;
+      toggleDownloadButton(false);
       
       const checkId = getCheckId();
       
@@ -285,6 +408,8 @@
 
     async function queryAuditStatusByToken() {
       const auditInfoEl = document.getElementById('auditInfo');
+      latestAuditRecord = null;
+      toggleDownloadButton(false);
       const username = document.getElementById('queryName').value.trim();
       const rawToken = document.getElementById('queryToken').value.trim();
 
@@ -360,6 +485,12 @@
       const queryBtn = document.getElementById('queryByTokenBtn');
       if (queryBtn) {
         queryBtn.addEventListener('click', queryAuditStatusByToken);
+      }
+
+      const downloadBtn = document.getElementById('downloadCertBtn');
+      if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadCertificate);
+        toggleDownloadButton(false);
       }
     });
   </script>

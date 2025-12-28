@@ -84,6 +84,14 @@
       background: #dee2e6;
       transform: translateY(-2px);
     }
+    #checkBtn {
+      background: #f1f3f5;
+      color: #495057;
+    }
+    #checkBtn:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
     #authBtn {
       background: #0078d4; 
       color: white; 
@@ -154,6 +162,7 @@
     
     <div class="btn-group">
       <button id="applyBtn">申请加入</button>
+      <button id="checkBtn">查询审核状态</button>
       <button id="authBtn">验证并生成证书</button>
     </div>
     
@@ -372,6 +381,10 @@
       window.location.href = 'apply/index.html';
     }
 
+    function goToCheckPage() {
+      window.location.href = 'check/index.html';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       const authBtn = document.getElementById('authBtn');
       if (authBtn) {
@@ -387,6 +400,14 @@
         console.log("申请按钮事件绑定成功");
       } else {
         console.error("未找到申请按钮DOM元素");
+      }
+
+      const checkBtn = document.getElementById('checkBtn');
+      if (checkBtn) {
+        checkBtn.addEventListener('click', goToCheckPage);
+        console.log("查询按钮事件绑定成功");
+      } else {
+        console.error("未找到查询按钮DOM元素");
       }
     });
 
