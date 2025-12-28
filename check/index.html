@@ -182,6 +182,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="../font-loader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
     // Supabase配置
@@ -197,66 +198,6 @@
       console.error("Supabase初始化失败:", e);
     }
     let latestAuditRecord = null;
-
-    const CHINESE_FONT_NAME = "WenKaiLite";
-    const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
-    const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
-    let chineseFontPromise = null;
-    let chineseFontBase64 = "";
-
-    function bufferToBase64(buffer) {
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      const chunk = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-      }
-      return btoa(binary);
-    }
-
-    async function ensureChineseFont(doc) {
-      const hasFont = () => {
-        const fontList = doc.getFontList ? doc.getFontList() : {};
-        return fontList[CHINESE_FONT_NAME];
-      };
-      if (hasFont()) {
-        doc.setFont(CHINESE_FONT_NAME, "normal");
-        return;
-      }
-
-      if (!chineseFontPromise) {
-        chineseFontPromise = fetch(CHINESE_FONT_URL)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error(`字体下载失败（${res.status}）`);
-            }
-            return res.arrayBuffer();
-          })
-          .then(buffer => {
-            chineseFontBase64 = bufferToBase64(buffer);
-          })
-          .catch(err => {
-            chineseFontPromise = null;
-            throw err;
-          });
-      }
-
-      try {
-        await chineseFontPromise;
-        if (!hasFont()) {
-          if (chineseFontBase64) {
-            doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
-            doc.addFont(CHINESE_FONT_FILE, CHINESE_FONT_NAME, "normal");
-          } else {
-            throw new Error("未获取到中文字体数据");
-          }
-        }
-        doc.setFont(CHINESE_FONT_NAME, "normal");
-      } catch (err) {
-        console.warn("中文字体加载失败，已回退为默认字体。", err);
-        doc.setFont("helvetica", "normal");
-      }
-    }
 
     const statusConfig = {
       '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
