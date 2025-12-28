@@ -3,10 +3,8 @@
   const CHINESE_FONT_FILE = "NotoSansSC-Regular.ttf";
   const CHINESE_FONT_URL = "/join/fonts/NotoSansSC-Regular.ttf";
   const BASE64_CHUNK_SIZE = 32768; // 32KB chunks to avoid call stack limits during base64 conversion
-  const MAX_FONT_RETRY = 3;
   let chineseFontPromise = null;
   let chineseFontBase64 = "";
-  let chineseFontAttempts = 0;
 
   function bufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
@@ -47,7 +45,6 @@
 
     if (!chineseFontPromise) {
       chineseFontPromise = (async () => {
-        chineseFontAttempts++;
         const res = await fetch(CHINESE_FONT_URL);
         if (!res.ok) {
           throw new Error(`字体下载失败 / Font download failed (status ${res.status})`);
@@ -55,21 +52,7 @@
         const buffer = await res.arrayBuffer();
         chineseFontBase64 = bufferToBase64(buffer);
         return chineseFontBase64;
-      })().catch(err => {
-        const willRetry = chineseFontAttempts < MAX_FONT_RETRY;
-        if (willRetry) {
-          chineseFontPromise = null; // allow retry on next invocation while under retry limit
-        } else {
-          chineseFontPromise = Promise.reject(err);
-        }
-        console.error(
-          willRetry 
-            ? "字体下载失败，将在下次调用时重试 / Font download failed, will retry on next attempt."
-            : "字体下载失败，已达最大重试次数，将使用回退字体 / Font download failed and max retries reached, falling back.",
-          err
-        );
-        throw err;
-      });
+      })();
     }
 
     try {
@@ -84,7 +67,6 @@
         }
       }
       doc.setFont(CHINESE_FONT_NAME, "normal");
-      chineseFontAttempts = 0;
     } catch (err) {
       console.warn("中文字体加载失败，已回退为默认字体 / Font load failed, fallback to default.", err);
       doc.setFont("helvetica", "normal");
