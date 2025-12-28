@@ -197,6 +197,65 @@
       }
     }
 
+    const CHINESE_FONT_NAME = "WenKaiLite";
+    const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
+    const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
+    let chineseFontPromise = null;
+    let chineseFontBase64 = "";
+
+    function bufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    async function ensureChineseFont(doc) {
+      const hasFont = () => {
+        const fontList = doc.getFontList ? doc.getFontList() : {};
+        return fontList[CHINESE_FONT_NAME];
+      };
+      if (hasFont()) {
+        doc.setFont(CHINESE_FONT_NAME, "normal");
+        return;
+      }
+
+      if (!chineseFontPromise) {
+        chineseFontPromise = fetch(CHINESE_FONT_URL)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`字体下载失败（${res.status}）`);
+            }
+            return res.arrayBuffer();
+          })
+          .then(buffer => {
+            chineseFontBase64 = bufferToBase64(buffer);
+            doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
+          })
+          .catch(err => {
+            chineseFontPromise = null;
+            throw err;
+          });
+      }
+
+      try {
+        await chineseFontPromise;
+        if (!hasFont()) {
+          if (chineseFontBase64) {
+            doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
+          }
+          doc.addFont(CHINESE_FONT_FILE, CHINESE_FONT_NAME, "normal");
+        }
+        doc.setFont(CHINESE_FONT_NAME, "normal");
+      } catch (err) {
+        console.warn("中文字体加载失败，已回退为默认字体。", err);
+        doc.setFont("helvetica", "normal");
+      }
+    }
+
     // 生成8位数字审核编号
     function generateCheckId() {
       return Math.floor(10000000 + Math.random() * 90000000).toString();
@@ -225,13 +284,15 @@
       }
     }
 
-    function generateCertificate(name) {
+    async function generateCertificate(name) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
+
+      await ensureChineseFont(doc);
 
       const originalImgUrl = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo.png?t=" + new Date().getTime();
       const TRANSPARENT_PNG_URL = "https://cdn.jsdelivr.net/gh/nuggetojtop/nuggetojtop.github.io@main/logo2.png?t=" + new Date().getTime();
@@ -282,27 +343,26 @@
         });
       };
 
-      waitForImages().then(() => {
-        if (img1.complete) {
-          doc.addImage(img1, 'PNG', (210 - 120)/2, 140, 120, 0);
-          console.log("原有图片绘制成功");
-        } else {
-          doc.setDrawColor(255, 0, 0);
-          doc.rect((210 - 120)/2, 140, 120, 60);
-          console.error("原有图片加载失败，请检查URL");
-        }
+      await waitForImages();
+      if (img1.complete) {
+        doc.addImage(img1, 'PNG', (210 - 120)/2, 140, 120, 0);
+        console.log("原有图片绘制成功");
+      } else {
+        doc.setDrawColor(255, 0, 0);
+        doc.rect((210 - 120)/2, 140, 120, 60);
+        console.error("原有图片加载失败，请检查URL");
+      }
 
-        if (img2.complete) {
-          doc.addImage(img2, 'PNG', 100, 110, 60, 0);
-          console.log("透明PNG绘制成功");
-        } else {
-          doc.setDrawColor(0, 255, 0);
-          doc.rect(100, 110, 60, 30);
-          console.error("透明PNG加载失败，请检查：", TRANSPARENT_PNG_URL);
-        }
+      if (img2.complete) {
+        doc.addImage(img2, 'PNG', 100, 110, 60, 0);
+        console.log("透明PNG绘制成功");
+      } else {
+        doc.setDrawColor(0, 255, 0);
+        doc.rect(100, 110, 60, 30);
+        console.error("透明PNG加载失败，请检查：", TRANSPARENT_PNG_URL);
+      }
 
-        doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
-      });
+      doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
     }
 
     async function authMember() {
@@ -361,9 +421,13 @@
           resultEl.innerHTML = successHtml;
 
           setTimeout(() => {
-            generateCertificate(name);
-            document.getElementById('name').value = '';
-            document.getElementById('token').value = '';
+            generateCertificate(name).catch(err => {
+              console.error("生成证书失败:", err);
+              resultEl.innerHTML = '<span class="error">❌ 证书生成失败，请稍后重试</span>';
+            }).finally(() => {
+              document.getElementById('name').value = '';
+              document.getElementById('token').value = '';
+            });
           }, 300);
         } else {
           resultEl.innerHTML = '<span class="error">❌ 认证失败：姓名或Token错误！</span>';
