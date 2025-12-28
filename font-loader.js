@@ -2,15 +2,15 @@
   const CHINESE_FONT_NAME = "WenKaiLite";
   const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
   const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
+  const CHUNK_SIZE = 0x8000;
   let chineseFontPromise = null;
   let chineseFontBase64 = "";
 
   function bufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
-    const chunk = 0x8000;
     const chunks = [];
-    for (let i = 0; i < bytes.length; i += chunk) {
-      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk)));
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE)));
     }
     return btoa(chunks.join(''));
   }
@@ -21,8 +21,8 @@
     }
 
     const hasFont = () => {
-      const fontList = doc.getFontList ? doc.getFontList() : {};
-      return fontList[CHINESE_FONT_NAME];
+      const fontList = doc.getFontList ? doc.getFontList() : null;
+      return fontList && fontList[CHINESE_FONT_NAME];
     };
 
     if (hasFont()) {
