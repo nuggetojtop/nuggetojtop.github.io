@@ -147,7 +147,7 @@
 </head>
 <body>
   <div class="container">
-    <div class="group-title">Here is QMet Group!(ver 26.0.0)</div>
+    <div class="group-title">Here is QMet Group!(ver 26.1.0)</div>
     <h1>成员Token认证</h1>
     
     <div class="input-group">
@@ -268,12 +268,13 @@
       const certDate = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
       
       doc.setFontSize(20);
-      doc.text('Member Certificate (V1)', 105, 40, { align: 'center' });
+      doc.text('成员证明（第二代）', 105, 40, { align: 'center' });
       doc.setLineWidth(0.5);
       doc.line(40, 50, 170, 50);
       doc.setFontSize(14);
-      doc.text(`Certification for: ${name}`, 105, 70, { align: 'center' });
-      doc.text(`Valid member of QMet Group`, 105, 85, { align: 'center' });
+      doc.text(`持有人: ${name}`, 105, 70, { align: 'center' });
+      doc.text(`经过审核被认证为青铁党正式成员。此证明。`, 105, 85, { align: 'center' });
+      doc.text(`如果持有人有不用的显卡，可以到青岛中学 B401 室换取不锈钢脸盆和一袋辽宁盘锦大米。`, 105, 100, { align: 'center' });
       doc.setFontSize(12);
       doc.text(`Issue Date: ${certDate}`, 120, 100);
       doc.text(`Issued by: QMet Group`, 120, 120);
@@ -329,7 +330,7 @@
         console.error("透明PNG加载失败，请检查：", TRANSPARENT_PNG_URL);
       }
 
-      doc.save(`${name}_Member_Certificate_${certDate}.pdf`);
+      doc.save(`${name}_第二代正式成员证明_${certDate}.pdf`);
     }
 
     async function authMember() {
