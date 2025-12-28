@@ -2,16 +2,16 @@
   const CHINESE_FONT_NAME = "WenKaiLite";
   const CHINESE_FONT_FILE = "WenKaiLite-Regular.ttf";
   const CHINESE_FONT_URL = "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.7.0/LXGWWenKaiLite-Regular.ttf";
-  const CHUNK_SIZE = 0x8000; // process in 32KB chunks to avoid call stack limits during base64 conversion
+  const BASE64_CHUNK_SIZE = 32768; // 32KB chunks to avoid call stack limits during base64 conversion
   let chineseFontPromise = null;
   let chineseFontBase64 = "";
 
   function bufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
     const chunks = [];
-    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
       let chunkStr = "";
-      const end = Math.min(i + CHUNK_SIZE, bytes.length);
+      const end = Math.min(i + BASE64_CHUNK_SIZE, bytes.length);
       for (let j = i; j < end; j++) {
         chunkStr += String.fromCharCode(bytes[j]);
       }
@@ -35,7 +35,7 @@
       chineseFontPromise = (async () => {
         const res = await fetch(CHINESE_FONT_URL);
         if (!res.ok) {
-          throw new Error(`字体下载失败（${res.status}）`);
+          throw new Error(`字体下载失败 / Font download failed (status ${res.status})`);
         }
         const buffer = await res.arrayBuffer();
         chineseFontBase64 = bufferToBase64(buffer);
@@ -54,12 +54,12 @@
           doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
           doc.addFont(CHINESE_FONT_FILE, CHINESE_FONT_NAME, "normal");
         } else {
-          throw new Error("未获取到中文字体数据");
+          throw new Error("未获取到中文字体数据 / Missing Chinese font data");
         }
       }
       doc.setFont(CHINESE_FONT_NAME, "normal");
     } catch (err) {
-      console.warn("中文字体加载失败，已回退为默认字体。", err);
+      console.warn("中文字体加载失败，已回退为默认字体 / Font load failed, fallback to default.", err);
       doc.setFont("helvetica", "normal");
     }
   }
