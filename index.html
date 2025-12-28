@@ -365,7 +365,11 @@
           setTimeout(() => {
             generateCertificate(name).catch(err => {
               console.error("生成证书失败:", err);
-              resultEl.innerHTML = '<span class="error">❌ 证书生成失败，请稍后重试</span>';
+              resultEl.innerHTML = '';
+              const errorSpan = document.createElement('span');
+              errorSpan.className = 'error';
+              errorSpan.textContent = '❌ 证书生成失败，请稍后重试';
+              resultEl.appendChild(errorSpan);
             }).finally(() => {
               document.getElementById('name').value = '';
               document.getElementById('token').value = '';

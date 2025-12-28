@@ -10,7 +10,12 @@
     const bytes = new Uint8Array(buffer);
     const chunks = [];
     for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE)));
+      let chunkStr = "";
+      const end = Math.min(i + CHUNK_SIZE, bytes.length);
+      for (let j = i; j < end; j++) {
+        chunkStr += String.fromCharCode(bytes[j]);
+      }
+      chunks.push(chunkStr);
     }
     return btoa(chunks.join(''));
   }
@@ -20,36 +25,31 @@
       return;
     }
 
-    const hasFont = () => {
-      const fontList = doc.getFontList ? doc.getFontList() : null;
-      return fontList && fontList[CHINESE_FONT_NAME];
-    };
-
-    if (hasFont()) {
+    const initialFonts = doc.getFontList ? doc.getFontList() : null;
+    if (initialFonts && initialFonts[CHINESE_FONT_NAME]) {
       doc.setFont(CHINESE_FONT_NAME, "normal");
       return;
     }
 
     if (!chineseFontPromise) {
-      chineseFontPromise = fetch(CHINESE_FONT_URL)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`字体下载失败（${res.status}）`);
-          }
-          return res.arrayBuffer();
-        })
-        .then(buffer => {
-          chineseFontBase64 = bufferToBase64(buffer);
-        })
-        .catch(err => {
-          chineseFontPromise = null;
-          throw err;
-        });
+      chineseFontPromise = (async () => {
+        const res = await fetch(CHINESE_FONT_URL);
+        if (!res.ok) {
+          throw new Error(`字体下载失败（${res.status}）`);
+        }
+        const buffer = await res.arrayBuffer();
+        chineseFontBase64 = bufferToBase64(buffer);
+        return chineseFontBase64;
+      })().catch(err => {
+        chineseFontPromise = null;
+        throw err;
+      });
     }
 
     try {
       await chineseFontPromise;
-      if (!hasFont()) {
+      const currentFonts = doc.getFontList ? doc.getFontList() : null;
+      if (!currentFonts || !currentFonts[CHINESE_FONT_NAME]) {
         if (chineseFontBase64) {
           doc.addFileToVFS(CHINESE_FONT_FILE, chineseFontBase64);
           doc.addFont(CHINESE_FONT_FILE, CHINESE_FONT_NAME, "normal");
