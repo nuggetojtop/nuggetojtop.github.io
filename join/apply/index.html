@@ -132,18 +132,23 @@
     <a href="../index.html" class="back-link">← 返回认证页面</a>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
-    // Supabase配置
-    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
+    const AUDIT_STORAGE_KEY = 'qmet_audit_records';
 
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (e) {
-      document.getElementById('result').innerHTML = '<span class="error">❌ 系统初始化失败</span>';
-      console.error("Supabase初始化失败:", e);
+    function readAuditRecords() {
+      try {
+        const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.error("读取本地审核记录失败:", err);
+        return [];
+      }
+    }
+
+    function saveAuditRecords(records) {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(records));
     }
 
     // SHA-256哈希函数（和认证页一致）
@@ -163,8 +168,6 @@
 
     // 核心逻辑：提交用户名+Token → 跳转审核状态页
     async function submitApplication() {
-      if (!supabase) return;
-
       // 获取表单值
       const username = document.getElementById('applyName').value.trim();
       const rawToken = document.getElementById('applyToken').value.trim();
@@ -200,18 +203,16 @@
         // 3. 申请时间
         const applyTime = new Date().toISOString();
 
-        // 4. 插入审核记录（初始状态：待审核）
-        const { error } = await supabase
-          .from('audit_records')
-          .insert([{
-            check_id: checkId,
-            username: username,
-            token_hash: tokenHash,
-            apply_time: applyTime,
-            status: '待审核' // 初始状态
-          }]);
-
-        if (error) throw new Error(error.message);
+        // 4. 保存审核记录（初始状态：待审核）
+        const records = readAuditRecords();
+        records.push({
+          check_id: checkId,
+          username: username,
+          token_hash: tokenHash,
+          apply_time: applyTime,
+          status: '待审核' // 初始状态
+        });
+        saveAuditRecords(records);
 
         // 5. 提交成功 → 跳转审核状态页（带8位编号）
         window.location.href = `../check/index.html?checkId=${checkId}`;
