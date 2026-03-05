@@ -183,21 +183,21 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="../font-loader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
-    // Supabase配置
-    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
-    
-    // 初始化Supabase（增加错误兜底）
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (e) {
-      document.getElementById('auditInfo').innerHTML = '<div class="error">❌ 系统初始化失败</div>';
-      console.error("Supabase初始化失败:", e);
-    }
+    const AUDIT_STORAGE_KEY = 'qmet_audit_records';
     let latestAuditRecord = null;
+
+    function readAuditRecords() {
+      try {
+        const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.error("读取本地审核记录失败:", err);
+        return [];
+      }
+    }
 
     const statusConfig = {
       '待审核': { class: 'status-wait', text: '待审核', tip: '管理员将尽快审核，请耐心等待' },
@@ -383,29 +383,9 @@
         return;
       }
 
-      // 2. 检查Supabase是否初始化成功
-      if (!supabase) {
-        auditInfoEl.innerHTML = '<div class="error">❌ 数据库连接失败，请刷新页面</div>';
-        return;
-      }
-
       try {
-        // 3. 查询数据库（增加超时控制）
-        const queryPromise = supabase
-          .from('audit_records')
-          .select('*')
-          .eq('check_id', checkId)
-          .single();
-        
-        // 超时兜底（5秒）
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('查询超时')), 5000);
-        });
-
-        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-        // 4. 处理查询错误
-        if (error || !data) {
+        const data = readAuditRecords().find(item => item.check_id === checkId);
+        if (!data) {
           auditInfoEl.innerHTML = '<div class="error">❌ 未查询到该审核记录</div>';
           return;
         }
@@ -438,26 +418,15 @@
         auditInfoEl.innerHTML = `<div class="error">❌ Token长度至少为${MIN_TOKEN_LENGTH}位</div>`;
         return;
       }
-      if (!supabase) {
-        auditInfoEl.innerHTML = '<div class="error">❌ 数据库连接失败，请刷新页面</div>';
-        return;
-      }
 
       auditInfoEl.innerHTML = '<div class="loading">正在查询审核状态...</div>';
 
       try {
         const tokenHash = await sha256Hash(rawToken);
-        const { data, error } = await supabase
-          .from('audit_records')
-          .select('*')
-          .eq('username', username)
-          .eq('token_hash', tokenHash)
-          .order('apply_time', { ascending: false })
-          .limit(1);
-
-        if (error) {
-          throw new Error(error.message);
-        }
+        const data = readAuditRecords()
+          .filter(item => item.username === username && item.token_hash === tokenHash)
+          .sort((a, b) => new Date(b.apply_time) - new Date(a.apply_time))
+          .slice(0, 1);
 
         if (!data || data.length === 0) {
           auditInfoEl.innerHTML = '<div class="error">❌ 未查询到该审核记录</div>';

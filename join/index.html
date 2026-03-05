@@ -171,19 +171,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="./font-loader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  
   <script>
-    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
+    const AUDIT_STORAGE_KEY = 'qmet_audit_records';
 
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log("Supabase初始化完成");
-    } catch (e) {
-      console.error("Supabase初始化失败:", e);
-      alert("系统初始化失败，请刷新页面重试");
+    function readAuditRecords() {
+      try {
+        const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.error('读取本地审核记录失败:', err);
+        return [];
+      }
+    }
+
+    function saveAuditRecords(records) {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(records));
     }
 
     async function sha256Encrypt(rawStr) {
@@ -204,23 +208,13 @@
     }
 
     async function findLatestAuditRecord(name, tokenHash) {
-      const { data, error } = await supabase
-        .from('audit_records')
-        .select('check_id, status, apply_time')
-        .eq('username', name)
-        .eq('token_hash', tokenHash)
-        .order('apply_time', { ascending: false })
-        .limit(1);
-      
-      if (error) {
-        throw error;
-      }
-      return data && data.length ? data[0] : null;
+      const records = readAuditRecords()
+        .filter(item => item.username === name && item.token_hash === tokenHash)
+        .sort((a, b) => new Date(b.apply_time) - new Date(a.apply_time));
+      return records.length ? records[0] : null;
     }
 
-    // 提交审核记录到Supabase
     async function submitAuditRecord(name, tokenHash) {
-      if (!supabase) return null;
       const applyTime = new Date().toISOString();
       try {
         const latest = await findLatestAuditRecord(name, tokenHash);
@@ -229,16 +223,15 @@
         }
 
         const checkId = generateCheckId();
-        const { error } = await supabase
-          .from('audit_records')
-          .insert([{
-            check_id: checkId,
-            username: name,
-            token_hash: tokenHash,
-            apply_time: applyTime,
-            status: '待审核'
-          }]);
-        if (error) throw error;
+        const records = readAuditRecords();
+        records.push({
+          check_id: checkId,
+          username: name,
+          token_hash: tokenHash,
+          apply_time: applyTime,
+          status: '待审核'
+        });
+        saveAuditRecords(records);
         return checkId;
       } catch (err) {
         console.error("提交审核记录失败:", err);
@@ -333,11 +326,6 @@
     }
 
     async function authMember() {
-      if (!supabase) {
-        document.getElementById('result').innerHTML = '<span class="error">❌ 系统初始化失败，请刷新页面！</span>';
-        return;
-      }
-
       const name = document.getElementById('name').value.trim();
       const rawToken = document.getElementById('token').value.trim();
       const resultEl = document.getElementById('result');
@@ -364,14 +352,12 @@
 
       try {
         const inputTokenHash = await sha256Encrypt(rawToken);
-        const { data: members, error } = await supabase
-          .from('official_members')
-          .select('name, token_hash');
-        
-        if (error) throw new Error(`加载成员数据失败: ${error.message}`);
-        if (members.length === 0) throw new Error('暂无正式成员数据！');
+        const memberResponse = await fetch('/members.json', { cache: 'no-store' });
+        if (!memberResponse.ok) throw new Error('加载成员数据失败');
+        const members = await memberResponse.json();
+        if (!Array.isArray(members) || members.length === 0) throw new Error('暂无正式成员数据！');
 
-        const isMatch = members.some(m => m.name === name && m.token_hash === inputTokenHash);
+        const isMatch = members.some(m => m.name === name && (m.token_hash || m.token) === inputTokenHash);
 
         if (isMatch) {
           const checkId = await submitAuditRecord(name, inputTokenHash);

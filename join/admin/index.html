@@ -163,7 +163,6 @@
     <div id="applyListContainer" class="loading-tip">正在加载申请列表...</div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
     const ADMIN_PASSWORD_HASH = "7b1db78da5504cbc2437141fd88ded2f7ef3ddaf4f0096e0d21893131d9d92ff";
     async function sha256(str) {
@@ -221,16 +220,22 @@
       }
     });
 
-    // Supabase配置（和用户端一致）
-    const SUPABASE_URL = "https://qcxrfubkltphtvdfiikp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjeHJmdWJrbHRwaHR2ZGZpaWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkxOTMsImV4cCI6MjA4MjE1NTE5M30.v6Pd4R9wDdl5Ms8JfFu6wDneuO2_pj5LB8frEN1d6q8";
+    const AUDIT_STORAGE_KEY = 'qmet_audit_records';
 
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (e) {
-      document.getElementById('applyListContainer').innerHTML = '<div class="error-tip">❌ 系统初始化失败：' + e.message + '</div>';
-      console.error("Supabase初始化失败:", e);
+    function readAuditRecords() {
+      try {
+        const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.error("读取本地审核记录失败:", err);
+        return [];
+      }
+    }
+
+    function saveAuditRecords(records) {
+      localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(records));
     }
 
     function formatTime(isoTime) {
@@ -245,18 +250,8 @@
       const container = document.getElementById('applyListContainer');
       container.innerHTML = '<div class="loading-tip">正在加载申请列表...</div>';
 
-      if (!supabase) {
-        container.innerHTML = '<div class="error-tip">❌ 数据库连接失败，请刷新页面</div>';
-        return;
-      }
-
       try {
-        const { data, error } = await supabase
-          .from('audit_records')
-          .select('*')
-          .order('apply_time', { ascending: false });
-
-        if (error) throw new Error(error.message);
+        const data = readAuditRecords().sort((a, b) => new Date(b.apply_time) - new Date(a.apply_time));
 
         if (!data || data.length === 0) {
           container.innerHTML = '<div class="empty-tip">暂无认证申请记录</div>';
@@ -327,75 +322,15 @@
         return;
       }
 
-      if (!supabase) {
-        alert("数据库连接失败，请刷新页面");
-        return;
-      }
-
       try {
-        const { data: auditRecord, error: recordError } = await supabase
-          .from('audit_records')
-          .select('username, token_hash')
-          .eq('check_id', checkId)
-          .limit(1)
-          .single();
-
-        if (recordError) {
-          throw new Error(recordError.message || '未找到该申请记录');
+        const records = readAuditRecords();
+        const targetIndex = records.findIndex(item => item.check_id === checkId);
+        if (targetIndex === -1) {
+          throw new Error('未找到该申请记录');
         }
 
-        let prevMember = null;
-        let syncPerformed = false;
-        const shouldSyncMember = status === '通过' && auditRecord?.username && auditRecord?.token_hash;
-        if (shouldSyncMember) {
-          const { data: prevMemberRows, error: prevFetchError } = await supabase
-            .from('official_members')
-            .select('name, token_hash')
-            .eq('name', auditRecord.username)
-            .limit(1);
-          if (prevFetchError) {
-            throw new Error(`读取成员信息失败：${prevFetchError.message}`);
-          }
-          prevMember = Array.isArray(prevMemberRows) && prevMemberRows.length > 0 ? prevMemberRows[0] : null;
-
-          const syncResult = prevMember
-            ? await supabase
-                .from('official_members')
-                .update({ token_hash: auditRecord.token_hash })
-                .eq('name', auditRecord.username)
-            : await supabase
-                .from('official_members')
-                .insert([{ name: auditRecord.username, token_hash: auditRecord.token_hash }]);
-
-          if (syncResult?.error) {
-            throw new Error(`成员同步失败：${syncResult.error.message}`);
-          }
-          syncPerformed = true;
-        }
-
-        const { error } = await supabase
-          .from('audit_records')
-          .update({ status: status })
-          .eq('check_id', checkId);
-
-        if (error) {
-          if (shouldSyncMember && syncPerformed) {
-            // 尝试回滚成员同步
-            try {
-              if (prevMember) {
-                await supabase
-                  .from('official_members')
-                  .update({ token_hash: prevMember.token_hash })
-                  .eq('name', auditRecord.username);
-              } else {
-                await supabase.from('official_members').delete().eq('name', auditRecord.username);
-              }
-            } catch (rollbackErr) {
-              console.error(`成员同步回滚失败（审核编号 ${checkId}，用户 ${auditRecord.username}）：可能需要人工核对 official_members`, rollbackErr);
-            }
-          }
-          throw new Error(`${error.message}（状态未更新，成员同步已尝试回滚）`);
-        }
+        records[targetIndex] = { ...records[targetIndex], status: status };
+        saveAuditRecords(records);
 
         alert(`审核状态更新成功！编号${checkId} → ${status}`);
         loadApplyList();
