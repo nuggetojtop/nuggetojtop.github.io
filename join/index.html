@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - 页面未找到</title>
+  <!-- 引入Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 自定义配置（与密码页保持一致） -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5', // 主色调：柔和的靛蓝色
+            secondary: '#F3F4F6', // 辅助色：浅灰色
+            success: '#10B981', // 成功色：绿色
+            warning: '#F59E0B', // 警告色：橙色
+            danger: '#EF4444', // 危险色：红色
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 2px 10px rgba(0, 0, 0, 0.05)',
+            'card-hover': '0 10px 25px rgba(0, 0, 0, 0.08)',
+          }
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .btn-hover {
+        transition: all 0.2s ease;
+      }
+      .btn-hover:hover {
+        transform: translateY(-1px);
+      }
+      .float-animation {
+        animation: float 3s ease-in-out infinite;
+      }
+      .scale-animation {
+        transition: transform 0.5s ease;
+      }
+      .scale-animation:hover {
+        transform: scale(1.05);
+      }
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
+  <!-- 主容器 -->
+  <div class="w-full max-w-md bg-white rounded-xl shadow-card p-6 sm:p-8 transform transition-all duration-500 hover:shadow-card-hover scale-animation">
+    <!-- 404 图标区域 -->
+    <div class="text-center mb-8">
+      <div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 float-animation">
+        <i class="fa fa-exclamation-triangle text-4xl text-primary"></i>
+      </div>
+      <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-gray-800 mb-2">404</h1>
+      <p class="text-gray-500 text-lg sm:text-xl">页面未找到</p>
+    </div>
+    
+    <!-- 提示信息 -->
+    <div class="space-y-6 text-center">
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+        <p class="text-gray-600">
+          这里还在维护咕！
+        </p>
+      </div>
+      
+      <!-- 可能的原因 -->
+      
+      <!-- <div class="text-left text-sm text-gray-500 space-y-2">
+        <p class="font-medium text-gray-600 mb-1">可能的原因：</p>
+        <ul class="space-y-1">
+          <li class="flex items-start">
+            <i class="fa fa-circle-o text-xs mt-1 mr-2 text-gray-400"></i>
+            <span>URL 地址输入错误</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-circle-o text-xs mt-1 mr-2 text-gray-400"></i>
+            <span>页面已被移动或删除</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-circle-o text-xs mt-1 mr-2 text-gray-400"></i>
+            <span>链接已过期或无效</span>
+          </li>
+        </ul>
+      </div> -->
+      
+      <!-- 操作按钮 -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+        <a href="/" class="flex-1 py-3 px-4 bg-primary text-white rounded-lg font-medium btn-hover hover:bg-primary/90 active:bg-primary/80 transition-colors flex items-center justify-center">
+          <i class="fa fa-home mr-2"></i>
+          <span>返回首页</span>
+        </a>
+        <a href="javascript:history.back()" class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium btn-hover hover:bg-gray-200 active:bg-gray-300 transition-colors flex items-center justify-center">
+          <i class="fa fa-arrow-left mr-2"></i>
+          <span>返回上一页</span>
+        </a>
+      </div>
+    </div>
+    
+    <!-- 底部提示 -->
+    <div class="mt-8 text-center text-xs text-gray-400">
+      <p></p>
+      <p class="mt-1">© 2025 nuggetoj.top - 保留所有权利</p>
+    </div>
+  </div>
+  
+  <!-- 装饰元素（增强视觉效果） -->
+  <div class="fixed -bottom-10 -left-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
+  <div class="fixed -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
+
+  <script>
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.querySelector('.scale-animation');
+      // 初始缩放为0.95，加载后过渡到1.0
+      container.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        container.style.transform = 'scale(1.0)';
+      }, 100);
+      
+      // 为按钮添加点击反馈
+      const buttons = document.querySelectorAll('a');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          this.style.transform = 'translateY(1px)';
+          setTimeout(() => {
+            this.style.transform = 'translateY(0)';
+          }, 150);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
